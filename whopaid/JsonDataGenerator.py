@@ -13,8 +13,8 @@ import datetime
 import json
 import os
 
-PMTAPPDIR = os.getenv("PMTAPPDIR")
-DUMPING_DIR = os.path.join(PMTAPPDIR, "static", "dbs")
+UBEROBSERVERDIR = os.getenv("UBEROBSERVERDIR")
+DUMPING_DIR = os.path.join(UBEROBSERVERDIR, "static", "dbs")
 SMALL_NAME = GetOption("CONFIG_SECTION", "SmallName")
 EXT = ".json"
 PMT_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "PMT_" + SMALL_NAME + EXT))
@@ -157,7 +157,8 @@ def _DumpPaymentsDB():
 
   data["customers"] = allCustomers
   allPayments = GetAllCompaniesDict().GetAllPaymentsByAllCompaniesAsDict()
-  recentPmtDate = max([p.pmtDate for comp, payments in allPayments.iteritems() for p in payments])
+  #recentPmtDate = max([p.pmtDate for comp, payments in allPayments.iteritems() for p in payments])
+  recentPmtDate = datetime.date.today()
   compSmallName = GetOption("CONFIG_SECTION", "SmallName")
   data ["showVerbatimOnTop"] = "{} last pmt: {}".format(compSmallName, DD_MM_YYYY(recentPmtDate))
 
@@ -193,7 +194,9 @@ def _DumpKMPendingOrdersDB():
   ro = GetAllReceivedOrders(ro)
 
   data['allKMOrders'] = allKMOrders
-  lastInvoiceDate = max([o.invoiceDate for o in ro])
+
+  lastInvoiceDate = datetime.date.today() #TODO: Fix it later
+  #lastInvoiceDate = max([o.invoiceDate for o in ro])
   compSmallName = GetOption("CONFIG_SECTION", "SmallName")
   data ["showVerbatimOnTop"] = "{} : {}".format(compSmallName, DD_MM_YYYY(lastInvoiceDate))
   data ["showVerbatimOnTopDateISO"] = { compSmallName : lastInvoiceDate.isoformat()}
@@ -269,10 +272,10 @@ def _DumpJSONDB():
 def AskUberObserverToUploadJsons():
   #TODO:There is an extremely tight coupling within pmtapp and jsongenerator. For ex jsongenerator has to know the path of pushfile to execute it. Need a more elegant way to invoke uploads.
   import subprocess
-  pushFile = os.path.abspath(os.path.join(PMTAPPDIR, "utils", "push.py"))
+  pushFile = os.path.abspath(os.path.join(UBEROBSERVERDIR, "utils", "push.py"))
   if not os.path.exists(pushFile):
     raise Exception("{} does not exist".format(pushFile))
-  e = 'moc.slootdnaseiddradnats@repoleved'
+  e = 'moc.liamg@ztigihba'
   v='live'
   cmd = "python \"{pushFile}\" --email={e} --version={v} --oauth2".format(pushFile=pushFile, e=e[::-1], v=v)
   print("Running: {}".format(cmd))

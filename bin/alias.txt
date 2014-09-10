@@ -223,3 +223,4 @@ galkhaleej = pushd %XDATDOCSDIR%\Export\AlkhaleejSteelsDubai && start.
 ghandy = pushd %XDATDOCSDIR%\SDAT\LettersSent\HandyWire && start.
 governite = pushd %XDATDOCSDIR%\SDAT\Courier && start.
 
+golivetracker = %UBEROBSERVERDIR%\utils\push.py --version="live" --email="abhigitz@gmail.com" --oauth2 --force-upload $*

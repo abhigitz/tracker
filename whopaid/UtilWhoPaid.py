@@ -339,7 +339,7 @@ class SingleBillRow(SingleRow):
     @property
     def uid_string(self):
         #Assumption: A particular bill number and invoice date are enough to single out any bill and they will never produce a collision
-        return "{}{}{}".format(str(self.billNumber), DD_MM_YYYY(self.invoiceDate), str(self.docketNumber))
+        return "{}{}{}".format(str(self.billNumber), DD_MM_YYYY(self.invoiceDate))
 
 
 def GetAllBillsInLastNDays(nDays):
@@ -385,13 +385,10 @@ class SheetCols:
     Tax                    = "J"
     Courier                = "K"
     InvoiceAmount          = "L"
-    DocketNumber           = "M"
-    DocketDate             = "N"
-    CourierName            = "O"
-    PaymentReceivingDate   = "P"
-    PaymentStatus          = "Q"
-    PaymentAccountedFor    = "R"
-    FormCReceivingDate     = "S"
+    PaymentReceivingDate   = "M"
+    PaymentStatus          = "N"
+    PaymentAccountedFor    = "O"
+    FormCReceivingDate     = "P"
 
 def CreateSingleOrderRow(row):
     r = SingleOrderRow()
@@ -514,20 +511,6 @@ def CreateSingleBillRow(row):
       b.tax = val
     elif col == SheetCols.PaymentStatus:
       b.paymentStatus = val
-    elif col == SheetCols.DocketNumber:
-      if type(val) == float:
-        b.docketNumber = str(int(val))
-      elif type(val) == int:
-        b.docketNumber = str(val)
-      else:
-        b.docketNumber = val
-    elif col == SheetCols.DocketDate:
-      if val:
-        b.docketDate = ParseDateFromString(val)
-      else:
-        b.docketDate = val
-    elif col == SheetCols.CourierName:
-        b.courierName = val
     elif col == SheetCols.MaterialDesc:
       if isinstance(val, basestring):
         b.materialDesc = val
