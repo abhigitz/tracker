@@ -1,4 +1,3 @@
-DATA_STARTS_AT_ROW = 2
 #######################################################
 ## Author: Ashish Anand
 ## Date: 25-Dec-2012
@@ -106,12 +105,13 @@ class _AllCustomersInfo(dict):
         super(_AllCustomersInfo, self).__init__(dict())
         from Util.ExcelReader import LoadIterableWorkbook
         wb = LoadIterableWorkbook(custDBwbPath)
+        dataStartsAtRow = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "CustDataStartsAtRow"))
         ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "NameOfCustSheet"))
         MAX_ROW = ws.get_highest_row()
         rowNumber = 0
         for row in ws.iter_rows():
             rowNumber += 1
-            if rowNumber < DATA_STARTS_AT_ROW:
+            if rowNumber < dataStartsAtRow:
                 continue
             if rowNumber >= MAX_ROW:
                 break
