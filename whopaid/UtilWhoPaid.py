@@ -9,19 +9,12 @@ from Util.Exception import MyException
 from Util.Config import GetOption, GetAppDir
 from Util.ExcelReader import LoadIterableWorkbook
 from Util.Misc import GetPickledObject, ParseDateFromString, DD_MM_YYYY, PrintInBox
-from Util.Persistant import Persistant
+from Util.Persistent import Persistent
 
 from whopaid.CustomersInfo import GetAllCustomersInfo
 
 import os
-import shelve
 import datetime
-from contextlib import closing
-
-BILLS_FILE_LAST_CHANGE_SHELF_ID = "BillsFileLastChangedAt"
-PERSISTENT_STORAGE_PATH = os.path.join(
-    GetOption("CONFIG_SECTION", "TempPath"),
-    GetOption("CONFIG_SECTION", "PersistentStorageDB"))
 
 def GetWorkBookPath():
     return os.path.join(GetAppDir(), GetOption("CONFIG_SECTION", "WorkbookRelativePath"))
@@ -134,11 +127,11 @@ def GuessKindFromRow(row):
   return None
 
 def ShrinkWorkingArea():
-  return FirstReadablePersistantRow().SetFirstRow()
+  return FirstReadablePersistentRow().SetFirstRow()
 
-class FirstReadablePersistantRow(Persistant):
+class FirstReadablePersistentRow(Persistent):
   """
-  It keeps a persistant track of the first row where meaningful data should be read from
+  It keeps a Persistent track of the first row where meaningful data should be read from
   """
   identifier = "firstRow"
   def __init__(self):
@@ -210,7 +203,7 @@ class _AllCompaniesDict(CompaniesDict):
     MIN_ROW = int(GetOption("CONFIG_SECTION", "DataStartsAtRow"))
     rowNumber = 0
 
-    frr = FirstReadablePersistantRow().GetFirstRow() or MIN_ROW
+    frr = FirstReadablePersistentRow().GetFirstRow() or MIN_ROW
 
     for row in ws.iter_rows():
       rowNumber += 1
@@ -597,24 +590,6 @@ def TotalAmountDueForThisCompany(allBillsDict, compName):
   newBillList = SelectUnpaidBillsFrom(allBillsForThisComp)
   return int(sum([b.amount for b in newBillList]))
 
-
-def HasBillsFileChangedSinceLastTime():
-  """
-  This function will read the last stored time and let the user know if file has been changed since last time it was read.
-  """
-  PrintInBox("PERSISTENT_STORAGE_PATH = {}".format(PERSISTENT_STORAGE_PATH))
-  with closing(shelve.open(PERSISTENT_STORAGE_PATH)) as sh:
-    if sh.has_key(BILLS_FILE_LAST_CHANGE_SHELF_ID):
-      return sh[BILLS_FILE_LAST_CHANGE_SHELF_ID] != os.path.getmtime(GetWorkBookPath())
-  return True
-
-def StoreNewTimeForBillsFile():
-  """
-  This function will store new time for bills file.
-  """
-  with closing(shelve.open(PERSISTENT_STORAGE_PATH)) as sh:
-    sh[BILLS_FILE_LAST_CHANGE_SHELF_ID] = os.path.getmtime(GetWorkBookPath())
-  return
 
 def ShowPendingOrdersOnScreen():
   allOrdersDict = GetAllCompaniesDict().GetAllOrdersOfAllCompaniesAsDict()

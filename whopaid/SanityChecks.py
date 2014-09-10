@@ -11,12 +11,11 @@ from Util.Config import GetOption
 from Util.Decorators import timeThisFunction
 from Util.Exception import MyException
 from Util.Misc import PrintInBox, ParseDateFromString, IsDeliveredAssessFromStatus
-from Util.Persistant import Persistant
+from Util.Persistent import Persistent
 
 from whopaid.AutomaticNotifications import SendAutomaticSmsReportsIfRequired
 from whopaid.CustomersInfo import GetAllCustomersInfo
 from whopaid.JsonDataGenerator import AskUberObserverToUploadJsons
-from whopaid.MarkBillsAsPaid import ReportBillWhichShouldBeMarkAsPaid
 from whopaid.UtilWhoPaid import GetAllCompaniesDict, SelectBillsAfterDate, ShrinkWorkingArea, GetWorkBookPath
 
 from collections import defaultdict
@@ -33,7 +32,7 @@ def SendAutomaticHeartBeat():
 
 
 
-class PersistentInfoForConsistencyCheck(Persistant):
+class PersistentInfoForConsistencyCheck(Persistent):
   identifier = "LastModifiedTimeForBillsFile"
   def __init__(self):
     super(self.__class__, self).__init__(self.__class__.__name__)
@@ -59,7 +58,6 @@ def CheckConsistency():
       CheckBillingCategory,
       CheckBillsCalculation,
       CheckCancelledAmount,
-      CheckIfAnyBillsShouldBeMarkedAsPaid,
       ]
 
   allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
@@ -67,11 +65,6 @@ def CheckConsistency():
     eachFunc(allBillsDict)
   pcc.saveNewFileTimeAtWhichConsistencyCheckWasDone()
   return
-
-def CheckIfAnyBillsShouldBeMarkedAsPaid(allBillsDict):
-  msg = ReportBillWhichShouldBeMarkAsPaid()
-  if msg:
-    raise Exception(msg)
 
 def CheckCancelledAmount(allBillsDict):
   for (eachCompName, eachComp) in allBillsDict.iteritems():

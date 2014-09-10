@@ -70,14 +70,6 @@ gread = pushd b:\read
 gkeyl = pushd %XDATDOCSDIR%\MyScripts\keyl
 gff = pushd %XDATDOCSDIR%\FrequentFliers
 gydl = pushd "B:\\YoutubeVideosDownloaded\\"
-rollbacksdat = pushd %WEBDIR%\ && appcfg.py rollback . --no_cookies --email="developer@standarddiesandtools.com" $*
-rollbacksdatlive = pushd %WEBDIR%\ && appcfg.py rollback . --no_cookies --email="developer@standarddiesandtools.com" --version="live" $*
-rollbacksdatdev = pushd %WEBDIR%\ && appcfg.py rollback . --no_cookies --email="developer@standarddiesandtools.com" --version="dev" $*
-golivesdat = %WEBDIR%\scripts\push.py --version="live" --email="developer@standarddiesandtools.com" --oauth2 $*
-godevsdat = %WEBDIR%\scripts\push.py --version="dev" --email="developer@standarddiesandtools.com" --oauth2 $*
-golivephungsuk = %PHUNGSUKDIR%\scripts\push.py --version="live" --email="developer@phungsukjibabo.mygbiz.com"
-godevphungsuk = %PHUNGSUKDIR%\scripts\push.py --version="dev" --email="developer@phungsukjibabo.mygbiz.com"
-rollbackphungsuk = pushd %PHUNGSUKDIR% && appcfg.py rollback . --no_cookies --email="developer@phungsukjibabo.mygbiz.com" $*
 
 gcl = java -jar %WEBDIR%\scripts\bin\GoogleClosureCompiler\compiler.jar $*
 gcladv = java -jar %WEBDIR%\scripts\bin\GoogleClosureCompiler\compiler.jar --compilation_level ADVANCED_OPTIMIZATIONS --js $1 --js_output_file $2
@@ -206,7 +198,6 @@ tree = b:\Tools\TreeSize\TreeSizeFree.exe
 gch = pushd %XDATDOCSDIR%\..\chess
 
 privoxy = pushd b:\tools\PrivoxyInstalled\ && start privoxy.exe && popd
-torsdat = pushd b:\tools\PrivoxyInstalled\ && start privoxy.exe && popd && %XDATDOCSDIR%\MyScripts\misc\TorPython.py --url "http://www.standarddiesandtools.com/about" --interval 20
 ;= :end
 ;= rem ******************************************************************
 ;= rem * EOF - Don't remove the following line.  It clears out the ';'
@@ -217,9 +208,6 @@ torsdat = pushd b:\tools\PrivoxyInstalled\ && start privoxy.exe && popd && %XDAT
 
 gpmt = pushd "%PMTAPPDIR%"
 pmtLT = %PMTAPPDIR%\utils\push.py --localTesting $*
-godevpmt = %PMTAPPDIR%\utils\push.py --version="dev" --email="developer@standarddiesandtools.com" --oauth2 --force-upload $*
-golivepmt = %PMTAPPDIR%\utils\push.py --version="live" --email="developer@standarddiesandtools.com" --oauth2 --force-upload $*
-rollbackpmt = pushd %PMTAPPDIR%\ && appcfg.py rollback .  --email="developer@standarddiesandtools.com" --oauth2 --version="live" $*
 rollbackpmt = pushd %PMTAPPDIR%\ && appcfg.py rollback .  --oauth2 --version="live" $*
 gcloudlogin = gcloud auth login --no-launch-browser
 
