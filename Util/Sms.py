@@ -13,9 +13,6 @@ from Util.Misc import PrintInBox
 import urllib2
 from Util.Decorators import RetryFor5TimesIfFailed
 
-GNOKII_PATH = os.path.join(GetAppDirPath(), "myscripts", "misc", "gnokii", "gnokii.exe")
-if not os.path.exists(GNOKII_PATH):
-    raise Exception("{} does not exist".format(GNOKII_PATH))
 
 class AndriodSMSGateway(object):
     SERVER = "192.168.1.18"
@@ -58,6 +55,7 @@ class AndriodSMSGateway(object):
         return
 
 class SonyEricssonPhone():
+    GNOKII_PATH = os.path.join(GetAppDirPath(), "myscripts", "misc", "gnokii", "gnokii.exe")
     def __init__(self):
         self.name = "Sony Ericsson Phone"
 
@@ -66,10 +64,12 @@ class SonyEricssonPhone():
         return
 
     def CanSendSmsAsOfNow(self):
+        if not os.path.exists(self.GNOKII_PATH):
+            raise Exception("{} does not exist".format(self.GNOKII_PATH))
         SUCCESS = 0
-        configPath = os.path.join(os.path.dirname(GNOKII_PATH), "gnokii.ini")
+        configPath = os.path.join(os.path.dirname(self.GNOKII_PATH), "gnokii.ini")
         configParams = " --config {}".format(configPath)
-        gnokiiCmd = GNOKII_PATH + configParams + " --identify "
+        gnokiiCmd = self.GNOKII_PATH + configParams + " --identify "
         with open(os.devnull, 'w') as tempf:
             #x = subprocess.call(gnokiiCmd, stdout=tempf, shell=True) #Hide standard output
             #x = subprocess.call(gnokiiCmd, stderr=tempf, shell=True)  #Hide error
@@ -84,9 +84,9 @@ class SonyEricssonPhone():
         """
         Uses gnokii to send messages.
         """
-        configPath = os.path.join(os.path.dirname(GNOKII_PATH), "gnokii.ini")
+        configPath = os.path.join(os.path.dirname(self.GNOKII_PATH), "gnokii.ini")
         configParams = " --config {}".format(configPath)
-        gnokiiCmd = GNOKII_PATH + configParams + " --sendsms " + toThisNumber
+        gnokiiCmd = self.GNOKII_PATH + configParams + " --sendsms " + toThisNumber
 
         from types import StringTypes
         if not isinstance(smsContents, StringTypes):
