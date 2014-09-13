@@ -105,7 +105,7 @@ class _AllCustomersInfo(dict):
         super(_AllCustomersInfo, self).__init__(dict())
         from Util.ExcelReader import LoadIterableWorkbook
         wb = LoadIterableWorkbook(custDBwbPath)
-        dataStartsAtRow = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "CustDataStartsAtRow"))
+        dataStartsAtRow = GetOption("CONFIG_SECTION", "CustDataStartsAtRow")
         ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "NameOfCustSheet"))
         MAX_ROW = ws.get_highest_row()
         rowNumber = 0

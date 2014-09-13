@@ -5,6 +5,7 @@
 ## Requirement: Python Interpretor must be installed
 #######################################################
 from openpyxl.reader.excel import load_workbook
+from openpyxl.cell import get_column_letter
 from Util.Temp import MakeTempCopy
 from Util.Decorators import memoize
 
@@ -46,3 +47,7 @@ def VLookup(workbookPath, sheetName, lookUpValue, lookUpColumn, correspondingCol
                 if i == i2:
                     return val2
     return None
+
+
+def GetColLetter(x):
+  return get_column_letter(x)
