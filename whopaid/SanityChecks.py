@@ -10,11 +10,12 @@
 from Util.Config import GetOption
 from Util.Decorators import timeThisFunction
 from Util.Exception import MyException
-from Util.Misc import PrintInBox, ParseDateFromString, IsDeliveredAssessFromStatus
+from Util.Misc import PrintInBox, ParseDateFromString, DD_MMM_YYYY
 from Util.Persistent import Persistent
 
 from whopaid.AutomaticNotifications import SendAutomaticSmsReportsIfRequired
 from whopaid.CustomersInfo import GetAllCustomersInfo
+from whopaid.IncomingMaterial import GetAllSuppliersDict
 from whopaid.JsonDataGenerator import AskUberObserverToUploadJsons
 from whopaid.UtilWhoPaid import GetAllCompaniesDict, SelectBillsAfterDate, ShrinkWorkingArea, GetWorkBookPath
 
@@ -52,19 +53,36 @@ def CheckConsistency():
 
   if not pcc.isCheckRequired(): return #We successfully ran no need to check again.
 
-  functionList = [
+  functionListForBills = [
       CheckCustomerExistenceInDB,
       ReportMissingOrDuplicateBillsSince,
       CheckBillingCategory,
       CheckBillsCalculation,
       CheckCancelledAmount,
+      ReportUndeclaredProducts,
       ]
 
   allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
-  for eachFunc in functionList:
+  for eachFunc in functionListForBills:
     eachFunc(allBillsDict)
+
+  allSupplierDict = GetAllSuppliersDict().GetAllBillsOfAllSuppliersAsDict()
+  functionListForIncomingMaterial = [
+      CheckPartExistenceInBOM,
+      ]
+  for eachFunc in functionListForIncomingMaterial:
+    eachFunc(allSupplierDict)
+
   pcc.saveNewFileTimeAtWhichConsistencyCheckWasDone()
   return
+
+def CheckPartExistenceInBOM(allSupplierDict):
+  from whopaid.bom import GetPartsNamesAsList
+  partNames = GetPartsNamesAsList()
+  for comp, bills in allSupplierDict.iteritems():
+    for b in bills:
+      if b.materialDesc not in partNames:
+        raise MyException("The purchased part {} in bill#{} dt {} is not defined in BOM".format(b.materialDesc, int(b.billNumber), DD_MMM_YYYY(b.invoiceDate)))
 
 def CheckCancelledAmount(allBillsDict):
   for (eachCompName, eachComp) in allBillsDict.iteritems():
@@ -81,6 +99,15 @@ def CheckBillingCategory(allBillsDict):
 def CheckBillsCalculation(allBillsDict):
   for (eachCompName, eachComp) in allBillsDict.iteritems():
     eachComp.CheckEachBillsCalculation()
+
+def ReportUndeclaredProducts(allBillsDict):
+  from bom import GetProductsNamesAsList
+  billedProducts = set([b.materialDesc for comp, billList in allBillsDict.iteritems() for b in billList])
+  bomProducts = GetProductsNamesAsList()
+  for p in billedProducts:
+    if p not in bomProducts:
+      raise MyException("{} is not defined in BOM".format(p))
+  return
 
 def ReportMissingOrDuplicateBillsSince(allBillsDict):
   d = defaultdict(list)
@@ -142,42 +169,12 @@ def CheckCustomerExistenceInDB(allBillsDict):
       raise MyException("M\s {} not found in customer database".format(eachComp))
   return
 
-def CheckCourierStatusAssessmentIsCorrect():
-  test_base = [
-      ("Parcel was not delivered", False),
-      ("Parcel was delivered", True),
-      ("Status of awb no not updated", False),
-      ("Parcel returned back to origin", False),
-      ("Parcel returned back to origin", False),
-      ("Delivered Friday", True),
-      ("Undelivered: Thursday", False),
-      ]
-  for eachStr, expectedDeliveryStatus in test_base:
-    if expectedDeliveryStatus != IsDeliveredAssessFromStatus(eachStr):
-      raise Exception("Our algorithm is faulty for the following string:\n{}".format(eachStr))
 
-#def CreateATestBill():
-#  b = SingleBillRow()
-#  b.compName = "Test"
-#  b.billingCategory = "Central"
-#  b.billNumber = 100
-#  b.invoiceDate = ParseDateFromString("1Jan11")
-#  b.materialDesc = "100 No TC Dies"
-#  b.goodsValue = 2
-#  b.tax = 2
-#  b.courier = 2
-#  b.amount = 6
-#  b.courierName = "Overnite Parcels"
-#  b.docketNumber = "To be inserted"
-#  b.docketDate = datetime.date.today()
-#  b.paymentReceivingDate = datetime.date.today()
-#  return b
 
 @timeThisFunction
 def main():
   try:
     CheckConsistency()
-    CheckCourierStatusAssessmentIsCorrect()
   except MyException as ex:
     PrintInBox(str(ex))
 

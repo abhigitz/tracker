@@ -381,14 +381,15 @@ class SheetCols:
     InvoiceNumberCol       = "F"
     InvoiceDateCol         = "G"
     MaterialDesc           = "H"
-    GoodsValue             = "I"
-    Tax                    = "J"
-    Courier                = "K"
-    InvoiceAmount          = "L"
-    PaymentReceivingDate   = "M"
-    PaymentStatus          = "N"
-    PaymentAccountedFor    = "O"
-    FormCReceivingDate     = "P"
+    MaterialQty            = "I"
+    GoodsValue             = "J"
+    Tax                    = "K"
+    Courier                = "L"
+    InvoiceAmount          = "M"
+    PaymentReceivingDate   = "N"
+    PaymentStatus          = "O"
+    PaymentAccountedFor    = "P"
+    FormCReceivingDate     = "Q"
 
 def CreateSingleOrderRow(row):
     r = SingleOrderRow()
@@ -518,6 +519,11 @@ def CreateSingleBillRow(row):
         b.materialDesc = "--"
       else:
         raise Exception("The material description should be string and not {} in row: {} and col: {}".format(type(val), cell.row, col))
+    elif col == SheetCols.MaterialQty:
+      if val is not None:
+        b.materialQty = int(val)
+      else:
+        b.materialQty = val
     elif col == SheetCols.FormCReceivingDate:
       if val is not None:
         try:

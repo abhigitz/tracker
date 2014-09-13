@@ -6,11 +6,15 @@
 #######################################################
 from Util.Misc import GetPickledObject
 from Util.Config import GetOption, GetAppDir
+from Util.ExcelReader import LoadNonIterableWorkbook, GetColLetter
 
 import os
 
-def GetProductsNamesAsList(bomPath):
-  from Util.ExcelReader import LoadNonIterableWorkbook, GetColLetter
+def GetBOMPath():
+  return  os.path.join(GetAppDir(), GetOption("CONFIG_SECTION", "BOMRelativePath"))
+
+def GetProductsNamesAsList():
+  bomPath = GetBOMPath()
   wb = LoadNonIterableWorkbook(bomPath)
   productsNamesInRow = GetOption("CONFIG_SECTION", "BOMProductNameInRow")
   productsStartFromCol = GetOption("CONFIG_SECTION", "BOMProductsStartsAtCol")
@@ -23,8 +27,8 @@ def GetProductsNamesAsList(bomPath):
   return [t.value for t in r[0]]
 
 
-def GetPartsNamesAsList(bomPath):
-  from Util.ExcelReader import LoadNonIterableWorkbook
+def GetPartsNamesAsList():
+  bomPath = GetBOMPath()
   wb = LoadNonIterableWorkbook(bomPath)
   productsNamesInRow = GetOption("CONFIG_SECTION", "BOMProductNameInRow")
   partsNameInCol = GetOption("CONFIG_SECTION", "BOMPartsNameInCol")
@@ -51,8 +55,8 @@ class _AllBOMInfo(dict):
     productsStartFromCol = GetOption("CONFIG_SECTION", "BOMProductsStartsAtCol")
     ran = "{productsStartFromCol}{dataStartsAtRow}:{maxColLetter}{max_row}".format(productsStartFromCol=productsStartFromCol, dataStartsAtRow=dataStartsAtRow, maxColLetter=maxColLetter, max_row=MAX_ROW)
     data = ws.range(ran)
-    productNamesList = GetProductsNamesAsList(bomPath)
-    partNamesList = GetPartsNamesAsList(bomPath)
+    productNamesList = GetProductsNamesAsList()
+    partNamesList = GetPartsNamesAsList()
     for product in productNamesList:
       self[product] = dict()
 
@@ -61,12 +65,16 @@ class _AllBOMInfo(dict):
         self[productNamesList[j]][partNamesList[i]] = partUsed.value
     return
 
+  def partsAndQtyForThisProductAsDict(self, product):
+    return self[product]
+
+
 
 def GetBOM():
-  bomPath = os.path.join(GetAppDir(), GetOption("CONFIG_SECTION", "BOMRelativePath"))
-  def _(bomPath):
+  bomPath = GetBOMPath()
+  def _PickledBOMInfo(bomPath):
     return _AllBOMInfo(bomPath)
-  return GetPickledObject(bomPath, createrFunction=_)
+  return GetPickledObject(bomPath, createrFunction=_PickledBOMInfo)
 
 
 def main():
