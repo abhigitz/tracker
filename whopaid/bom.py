@@ -59,13 +59,11 @@ class _AllBOMInfo(dict):
     for i, partRow in enumerate(data):
       for j, partUsed in enumerate(partRow):
         self[productNamesList[j]][partNamesList[i]] = partUsed.value
-        #print("{:15}{:15}: {}".format(productNamesList[j], partNamesList[i], partUsed.value))
     return
 
 
 def GetBOM():
   bomPath = os.path.join(GetAppDir(), GetOption("CONFIG_SECTION", "BOMRelativePath"))
-  return _AllBOMInfo(bomPath) #TODO: remove after testing
   def _(bomPath):
     return _AllBOMInfo(bomPath)
   return GetPickledObject(bomPath, createrFunction=_)
