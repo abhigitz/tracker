@@ -12,7 +12,7 @@ from Util.Exception import MyException
 from whopaid.bom import GetBOM
 from whopaid.IncomingMaterial import GetAllSuppliersDict
 from whopaid.UtilWhoPaid import GetAllCompaniesDict
-from whopaid.SanityChecks import  CheckConsistency
+from whopaid.SanityChecks import  CheckConsistency, SendAutomaticHeartBeat
 
 
 def ShowStockInHandOnScreen():
@@ -41,6 +41,7 @@ def main():
   try:
     CheckConsistency()
     ShowStockInHandOnScreen()
+    #SendAutomaticHeartBeat()
   except MyException as ex:
     PrintInBox(str(ex))
 

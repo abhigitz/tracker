@@ -1,5 +1,4 @@
 from contextlib import closing
-from Util.Config import GetOption
 import shelve
 import os
 
@@ -20,7 +19,7 @@ del p[key]
 p.allKeys
   """
   def __init__(self, name):
-    self.shelfFileName = os.path.join(GetOption("CONFIG_SECTION", "TempPath"), name + ".shelf")
+    self.shelfFileName = os.path.join(os.getenv("TEMPPATH"), name + ".shelf")
     if not os.path.exists(self.shelfFileName):
       with closing(shelve.open(self.shelfFileName)) as sh:
         pass #Just create it

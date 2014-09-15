@@ -14,6 +14,7 @@ import json
 import os
 
 UBEROBSERVERDIR = os.getenv("UBEROBSERVERDIR")
+PUSH_FILE = os.path.join(UBEROBSERVERDIR, "utils", "push.py")
 DUMPING_DIR = os.path.join(UBEROBSERVERDIR, "static", "dbs")
 SMALL_NAME = GetOption("CONFIG_SECTION", "SmallName")
 EXT = ".json"
@@ -166,44 +167,6 @@ def _DumpPaymentsDB():
     json.dump(data, f, separators=(',',':'), indent=2)
   return
 
-def _DumpKMPendingOrdersDB():
-  po = GetAllKMOrders()
-  po = GetAllPendingOrders(po)
-
-  if os.path.exists(KMO_JSON_FILE_NAME):
-    os.remove(KMO_JSON_FILE_NAME)
-
-  data = dict()
-  allKMOrders = defaultdict(list)
-  superSmallName = GetOption("CONFIG_SECTION", "SuperSmallName")
-
-  for o in po:
-    key =  "{} | {}".format(o.pelletSize, superSmallName)
-    singleKMOrder = dict()
-    singleKMOrder["poDateISOFormat"] = o.poDate.isoformat()
-    singleKMOrder["poDateAsNormalText"] = DD_MMM_YYYY(o.poDate.isoformat())#TODO: Use a different name for this field and fix mobile code too.
-    singleKMOrder["pelletSize"] = key
-    singleKMOrder["boreSize"] = o.boreSize
-    singleKMOrder["grade"] = o.grade
-    singleKMOrder["quantity"] = o.quantity
-    singleKMOrder["deliveryInstructions"] = o.deliveryInstructions
-    singleKMOrder["oaNumber"] = o.oaNumber
-    allKMOrders[key].append(singleKMOrder) #Just dump this single order there and we will club them pelletSize wise while generating final json
-
-  ro = GetAllKMOrders()
-  ro = GetAllReceivedOrders(ro)
-
-  data['allKMOrders'] = allKMOrders
-
-  lastInvoiceDate = datetime.date.today() #TODO: Fix it later
-  #lastInvoiceDate = max([o.invoiceDate for o in ro])
-  compSmallName = GetOption("CONFIG_SECTION", "SmallName")
-  data ["showVerbatimOnTop"] = "{} : {}".format(compSmallName, DD_MM_YYYY(lastInvoiceDate))
-  data ["showVerbatimOnTopDateISO"] = { compSmallName : lastInvoiceDate.isoformat()}
-  with open(KMO_JSON_FILE_NAME, "w+") as f:
-    json.dump(data, f, separators=(',',':'), indent=2)
-  return
-
 def _DumpFormCData():
   allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
 
@@ -264,7 +227,6 @@ def _DumpFormCData():
 
 def _DumpJSONDB():
   _DumpFormCData()
-  _DumpKMPendingOrdersDB()
   _DumpPaymentsDB()
   _DumpOrdersDB()
   return
@@ -272,12 +234,13 @@ def _DumpJSONDB():
 def AskUberObserverToUploadJsons():
   #TODO:There is an extremely tight coupling within pmtapp and jsongenerator. For ex jsongenerator has to know the path of pushfile to execute it. Need a more elegant way to invoke uploads.
   import subprocess
-  pushFile = os.path.abspath(os.path.join(UBEROBSERVERDIR, "utils", "push.py"))
-  if not os.path.exists(pushFile):
-    raise Exception("{} does not exist".format(pushFile))
+  import Util
+  Util.Misc.PrintInBox(PUSH_FILE)
+  if not os.path.exists(PUSH_FILE):
+    raise Exception("{} does not exist".format(PUSH_FILE))
   e = 'moc.liamg@ztigihba'
   v='live'
-  cmd = "python \"{pushFile}\" --email={e} --version={v} --oauth2".format(pushFile=pushFile, e=e[::-1], v=v)
+  cmd = "python \"{pushFile}\" --email={e} --version={v} --oauth2".format(pushFile=PUSH_FILE, e=e[::-1], v=v)
   print("Running: {}".format(cmd))
   subprocess.check_call(cmd)
   return

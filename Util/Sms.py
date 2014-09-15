@@ -94,7 +94,7 @@ class SonyEricssonPhone():
 
         PrintInBox("Sending sms to {}:\n{}".format(toThisNumber, smsContents))
 
-        fPath = os.path.join(GetOption("CONFIG_SECTION", "TempPath"), "smsContents.txt")
+        fPath = os.path.join(os.getenv("TEMPPATH"), "smsContents.txt")
         if os.path.exists(fPath): os.remove(fPath)
         with open(fPath,"w") as f:
             f.write(smsContents)

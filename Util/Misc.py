@@ -98,7 +98,7 @@ def GetPickledObject(workbookPath, createrFunction):
   #TODO: Use time here instead of hashes
   curVer = GetHash(workbookPath)
 
-  pickleDir = GetOption("CONFIG_SECTION", "TempPath")
+  pickleDir = os.getenv("TEMPPATH")
   if not os.path.exists(pickleDir):
     os.makedirs(pickleDir)
 
