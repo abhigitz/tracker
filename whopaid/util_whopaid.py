@@ -8,7 +8,7 @@
 from Util.Exception import MyException
 from Util.Config import GetOption, GetAppDir
 from Util.ExcelReader import LoadIterableWorkbook, GetCellValue
-from Util.Misc import GetPickledObject, ParseDateFromString, DD_MM_YYYY, PrintInBox
+from Util.Misc import GetPickledObject, ParseDateFromString, DD_MM_YYYY
 from Util.Persistent import Persistent
 
 from whopaid.customers_info import GetAllCustomersInfo
@@ -282,7 +282,7 @@ class SingleOrderRow(SingleRow):
         return "ORDER: {cn:}\n{dt}\n{md} ".format(
                 dt = DD_MM_YYYY(self.orderDate),
                 cn = self.compName,
-                md = self.materialDesc
+                md = self.modelDesc
                 )
 
 
@@ -380,8 +380,8 @@ class SheetCols:
     BillingCategory        = "E"
     InvoiceNumberCol       = "F"
     InvoiceDateCol         = "G"
-    MaterialDesc           = "H"
-    MaterialQty            = "I"
+    ModelDescCol           = "H"
+    MaterialQtyCol         = "I"
     GoodsValue             = "J"
     Tax                    = "K"
     Courier                = "L"
@@ -392,86 +392,86 @@ class SheetCols:
     FormCReceivingDate     = "Q"
 
 def CreateSingleOrderRow(row):
-    r = SingleOrderRow()
-    for cell in row:
-        col = cell.column
-        val = GetCellValue(cell)
+  r = SingleOrderRow()
+  for cell in row:
+    col = cell.column
+    val = GetCellValue(cell)
 
-        if col == SheetCols.CompanyFriendlyNameCol:
-            if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
-            r.compName = val
-        elif col == SheetCols.KindOfEntery:
-            r.kindOfEntery = val
-        elif col == SheetCols.MaterialDesc:
-            if not val: raise Exception("Order in row: {} seems empty. Please fix the database".format(cell.row))
-            r.materialDesc = val
-        elif col == SheetCols.InstrumentDateCol:
-            if not val: raise Exception("Date in row: {} seems empty. Please fix the database".format(cell.row))
-            r.orderDate = ParseDateFromString(val)
-        elif col == SheetCols.InstrumentNumberCol:
-            if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
-            r.orderNumber = val
-    return r
+    if col == SheetCols.CompanyFriendlyNameCol:
+      if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
+      r.compName = val
+    elif col == SheetCols.KindOfEntery:
+      r.kindOfEntery = val
+    elif col == SheetCols.ModelDescCol:
+      if not val: raise Exception("Order in row: {} seems empty. Please fix the database".format(cell.row))
+      r.modelDesc = val
+    elif col == SheetCols.InstrumentDateCol:
+      if not val: raise Exception("Date in row: {} seems empty. Please fix the database".format(cell.row))
+      r.orderDate = ParseDateFromString(val)
+    elif col == SheetCols.InstrumentNumberCol:
+      if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
+      r.orderNumber = val
+  return r
 
 def CreateSingleAdjustmentRow(row):
-    r = SingleAdjustmentRow()
-    for cell in row:
-        col = cell.column
-        val = GetCellValue(cell)
+  r = SingleAdjustmentRow()
+  for cell in row:
+    col = cell.column
+    val = GetCellValue(cell)
 
-        if col == SheetCols.CompanyFriendlyNameCol:
-            if not val: raise Exception("No company name in row: {} and col: {}".format(cell.row, col))
-            r.compName = val
-        elif col == SheetCols.KindOfEntery:
-            if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
-            r.kindOfEntery = val
-        elif col == SheetCols.InvoiceAmount:
-            if not val: raise Exception("No adjustment amount in row: {} and col: {}".format(cell.row, col))
-            r.amount = val
-        elif col == SheetCols.InvoiceDateCol:
-            if val is not None:
-                r.invoiceDate = ParseDateFromString(val)
-            else:
-                r.invoiceDate = val
-        elif col == SheetCols.PaymentAccountedFor:
-            r.adjustmentAccountedFor = False
-            if val is not None:
-                r.adjustmentAccountedFor = val.lower()=="yes"
-        elif col == SheetCols.InvoiceNumberCol:
-            r.adjustmentNo = val
+    if col == SheetCols.CompanyFriendlyNameCol:
+      if not val: raise Exception("No company name in row: {} and col: {}".format(cell.row, col))
+      r.compName = val
+    elif col == SheetCols.KindOfEntery:
+      if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
+      r.kindOfEntery = val
+    elif col == SheetCols.InvoiceAmount:
+      if not val: raise Exception("No adjustment amount in row: {} and col: {}".format(cell.row, col))
+      r.amount = val
+    elif col == SheetCols.InvoiceDateCol:
+      if val is not None:
+        r.invoiceDate = ParseDateFromString(val)
+      else:
+        r.invoiceDate = val
+    elif col == SheetCols.PaymentAccountedFor:
+      r.adjustmentAccountedFor = False
+      if val is not None:
+        r.adjustmentAccountedFor = val.lower()=="yes"
+    elif col == SheetCols.InvoiceNumberCol:
+      r.adjustmentNo = val
 
-    return r
+  return r
 
 def CreateSinglePaymentRow(row):
-    r = SinglePaymentRow()
-    for cell in row:
-        col = cell.column
-        val = GetCellValue(cell)
+  r = SinglePaymentRow()
+  for cell in row:
+    col = cell.column
+    val = GetCellValue(cell)
 
-        if col == SheetCols.InvoiceAmount:
-            if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
-            r.amount = val
-        elif col == SheetCols.KindOfEntery:
-            if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
-            r.kindOfEntery = GuessKindFromValue(val)
-        elif col == SheetCols.BillingCategory:
-            if not val: raise Exception("No bank name in row: {} and col: {}".format(cell.row, col))
-            r.bankName = val
-        elif col == SheetCols.InstrumentNumberCol:
-            if not val: raise Exception("No cheque number in row: {} and col: {}".format(cell.row, col))
-            r.chequeNumber = val
-        elif col == SheetCols.CompanyFriendlyNameCol:
-            if not val: raise Exception("No company name in row: {}".format(cell.row))
-            r.compName = val
-        elif col == SheetCols.InstrumentDateCol:
-            if not val: raise Exception("No cheque date in row: {}".format(cell.row))
-            r.pmtDate = ParseDateFromString(val)
-        elif col == SheetCols.PaymentAccountedFor:
-            if val is not None:
-                r.paymentAccountedFor = True if val.lower()=="yes" else False
-            else:
-                r.paymentAccountedFor = False
-    return r
+    if col == SheetCols.InvoiceAmount:
+      if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
+      r.amount = val
+    elif col == SheetCols.KindOfEntery:
+      if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
+      r.kindOfEntery = GuessKindFromValue(val)
+    elif col == SheetCols.BillingCategory:
+      if not val: raise Exception("No bank name in row: {} and col: {}".format(cell.row, col))
+      r.bankName = val
+    elif col == SheetCols.InstrumentNumberCol:
+      if not val: raise Exception("No cheque number in row: {} and col: {}".format(cell.row, col))
+      r.chequeNumber = val
+    elif col == SheetCols.CompanyFriendlyNameCol:
+      if not val: raise Exception("No company name in row: {}".format(cell.row))
+      r.compName = val
+    elif col == SheetCols.InstrumentDateCol:
+      if not val: raise Exception("No cheque date in row: {}".format(cell.row))
+      r.pmtDate = ParseDateFromString(val)
+    elif col == SheetCols.PaymentAccountedFor:
+      if val is not None:
+        r.paymentAccountedFor = True if val.lower()=="yes" else False
+      else:
+        r.paymentAccountedFor = False
+  return r
 
 
 def CreateSingleBillRow(row):
@@ -512,18 +512,18 @@ def CreateSingleBillRow(row):
       b.tax = val
     elif col == SheetCols.PaymentStatus:
       b.paymentStatus = val
-    elif col == SheetCols.MaterialDesc:
+    elif col == SheetCols.ModelDescCol:
       if isinstance(val, basestring):
-        b.materialDesc = val
+        b.modelDesc = val
       elif val is None:
-        b.materialDesc = "--"
+        b.modelDesc = "--"
       else:
         raise Exception("The material description should be string and not {} in row: {} and col: {}".format(type(val), cell.row, col))
-    elif col == SheetCols.MaterialQty:
+    elif col == SheetCols.MaterialQtyCol:
       if val is not None:
-        b.materialQty = int(val)
+        b.modelQty = int(val)
       else:
-        b.materialQty = val
+        b.modelQty = val
     elif col == SheetCols.FormCReceivingDate:
       if val is not None:
         try:
@@ -579,15 +579,3 @@ def TotalAmountDueForThisCompany(allBillsDict, compName):
   newBillList = SelectUnpaidBillsFrom(allBillsForThisComp)
   return int(sum([b.amount for b in newBillList]))
 
-
-def ShowPendingOrdersOnScreen():
-  allOrdersDict = GetAllCompaniesDict().GetAllOrdersOfAllCompaniesAsDict()
-  for eachComp, orders in allOrdersDict.iteritems():
-    for eachOrder in orders:
-      print(type(eachOrder))
-      PrintInBox(str(eachOrder))
-  return
-
-
-if __name__ == "__main__":
-    ShowPendingOrdersOnScreen()

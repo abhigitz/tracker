@@ -102,7 +102,7 @@ def CheckBillsCalculation(allBillsDict):
 
 def ReportUndeclaredProducts(allBillsDict):
   from bom import GetProductsNamesAsList
-  billedProducts = set([b.materialDesc for comp, billList in allBillsDict.iteritems() for b in billList])
+  billedProducts = set([b.modelDesc for comp, billList in allBillsDict.iteritems() for b in billList])
   bomProducts = GetProductsNamesAsList()
   for p in billedProducts:
     if p not in bomProducts:
@@ -149,7 +149,10 @@ def ReportMissingOrDuplicateBillsSince(allBillsDict):
         if billNumber not in listOfBillsInOneYear:
           raise MyException("Bill Number: %s missing in category %s in year starting from 1-Apr-%s" % (str(billNumber), eachCategory, eachYear))
         if listOfBillsInOneYear.count(billNumber) > 1:
-          raise MyException("Bill Number: %s is entered twice in category %s in year starting from 1-Apr-%s" % (str(billNumber), eachCategory, eachYear))
+          #raise MyException("Bill Number: %s is entered twice in category %s in year starting from 1-Apr-%s" % (str(billNumber), eachCategory, eachYear))
+          # This condition is relaxed since more than one model can be shipped
+          # to a single customer.
+          pass
 
   return
 
