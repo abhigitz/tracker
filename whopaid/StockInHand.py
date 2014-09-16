@@ -12,11 +12,13 @@ from Util.Exception import MyException
 from whopaid.bom import GetBOM
 from whopaid.IncomingMaterial import GetAllSuppliersDict
 from whopaid.UtilWhoPaid import GetAllCompaniesDict
-from whopaid.SanityChecks import  CheckConsistency, SendAutomaticHeartBeat
+from whopaid.SanityChecks import CheckConsistency
 
 
-def ShowStockInHandOnScreen():
-  finalPartsUsedDict = defaultdict(int)#Change it from int to decimal or something else if there is an overflow error.
+def CalculateStockInHand():
+
+  finalPartsUsedDict = defaultdict(int)  # Change it from int to
+  #decimal or something else if there is an overflow error.
   bom = GetBOM()
 
   allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
@@ -30,18 +32,22 @@ def ShowStockInHandOnScreen():
   for comp, bills in allSupplierDict.iteritems():
     for b in bills:
       finalPartsUsedDict[b.materialDesc] += b.materialQty
+  return finalPartsUsedDict
 
+
+def ShowStockInHandOnScreen():
   PrintInBox("Stock in hand")
+  finalPartsUsedDict = CalculateStockInHand()
   finalPartsUsedDict = OrderedDict(sorted(finalPartsUsedDict.items()))
   for parts, qty in finalPartsUsedDict.iteritems():
     print("{:<15}{:15}".format(parts, qty))
+  return
 
 
 def main():
   try:
     CheckConsistency()
     ShowStockInHandOnScreen()
-    #SendAutomaticHeartBeat()
   except MyException as ex:
     PrintInBox(str(ex))
 

@@ -3,25 +3,24 @@ from Util.Config import GetOption
 from Util.Misc import DD_MM_YYYY, DD_MMM_YYYY
 
 from whopaid.CustomersInfo import GetAllCustomersInfo
-from whopaid.KMPendingOrders import GetAllKMOrders, GetAllPendingOrders, GetAllReceivedOrders
-from whopaid.UtilWhoPaid import SelectUnpaidBillsFrom, GetAllCompaniesDict, datex, RemoveTrackingBills
+from whopaid.UtilWhoPaid import SelectUnpaidBillsFrom,\
+    GetAllCompaniesDict, datex, RemoveTrackingBills
 from whopaid.UtilFormC import QuarterlyClubbedFORMC
-
-from collections import defaultdict
 
 import datetime
 import json
 import os
 
 UBEROBSERVERDIR = os.getenv("UBEROBSERVERDIR")
-PUSH_FILE = os.path.join(UBEROBSERVERDIR, "utils", "push.py")
-DUMPING_DIR = os.path.join(UBEROBSERVERDIR, "static", "dbs")
-SMALL_NAME = GetOption("CONFIG_SECTION", "SmallName")
+PUSH_FILE       = os.path.join(UBEROBSERVERDIR, "utils", "push.py")
+DUMPING_DIR     = os.path.join(UBEROBSERVERDIR, "static", "dbs")
+SMALL_NAME      = GetOption("CONFIG_SECTION", "SmallName")
+
 EXT = ".json"
-PMT_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "PMT_" + SMALL_NAME + EXT))
+PMT_JSON_FILE_NAME   = os.path.abspath(os.path.join(DUMPING_DIR, "PMT_" + SMALL_NAME + EXT))
 ORDER_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "ORDER_" + SMALL_NAME + EXT))
-KMO_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "KMORDER_" + SMALL_NAME + EXT))
 FORMC_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "FORMC_" + SMALL_NAME + EXT))
+
 """
 OrderDB:
 data =
@@ -62,13 +61,14 @@ data =
 ]
 """
 
+
 def _DumpOrdersDB():
   allOrdersDict = GetAllCompaniesDict().GetAllOrdersOfAllCompaniesAsDict()
 
   if os.path.exists(ORDER_JSON_FILE_NAME):
     os.remove(ORDER_JSON_FILE_NAME)
 
-  data = list() #THis will have one day orders
+  data = list()  # This will have one day orders
 
   for eachCompName, orders in allOrdersDict.iteritems():
     for eachOrder in orders:
@@ -77,12 +77,13 @@ def _DumpOrdersDB():
       singleOrder["md"] = eachOrder.materialDesc
       singleOrder["oNum"] = eachOrder.orderNumber
       singleOrder["oDate"] = DD_MM_YYYY(eachOrder.orderDate)
-      data.append(singleOrder) #Just dump this single order there and we will club them date wise while generating final json
+      data.append(singleOrder)  # Just dump this single order there
+                                # and we will club them date wise while
+                                # generating final json
 
   with open(ORDER_JSON_FILE_NAME, "w+") as f:
-    json.dump(data, f, separators=(',',':'), indent=2)
+    json.dump(data, f, separators=(',', ':'), indent=2)
   return
-
 
 
 """
@@ -111,6 +112,8 @@ data=
 }
 
 """
+
+
 def _DumpPaymentsDB():
   allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
   allAdjustmentsDict = GetAllCompaniesDict().GetAllAdjustmentsOfAllCompaniesAsDict()
@@ -133,22 +136,23 @@ def _DumpPaymentsDB():
     unpaidBillList = sorted(unpaidBillList, key=lambda b: datex(b.invoiceDate))
     for b in unpaidBillList:
       oneBill = {
-          "bn" : b.billNumber,
+          "bn": b.billNumber,
           "bd": DD_MM_YYYY(datex(b.invoiceDate)),
           "cd": str(b.daysOfCredit),
-          "ba":str(int(b.amount))
+          "ba": str(int(b.amount))
           }
       oneCustomerBills.append(oneBill)
 
     for a in adjustmentList:
-      if a.adjustmentAccountedFor: continue
+      if a.adjustmentAccountedFor:
+        continue
       oneAdjustment = {
           "bn": a.adjustmentNo or "-1",
           "bd": DD_MM_YYYY(datex(a.invoiceDate)),
           "cd": "0",
-          "ba":str(int(a.amount))
+          "ba": str(int(a.amount))
           }
-      oneCustomerBills.append(oneAdjustment) #For all practical purposes, an adjustment is treated as a bill with bill#-1
+      oneCustomerBills.append(oneAdjustment)  # For all practical purposes, an adjustment is treated as a bill with bill#-1
 
     oneCustomer["bills"] = oneCustomerBills
     oneCustomer["trust"] = allCustInfo.GetTrustForCustomer(eachCompName)
@@ -161,16 +165,17 @@ def _DumpPaymentsDB():
   #recentPmtDate = max([p.pmtDate for comp, payments in allPayments.iteritems() for p in payments])
   recentPmtDate = datetime.date.today()
   compSmallName = GetOption("CONFIG_SECTION", "SmallName")
-  data ["showVerbatimOnTop"] = "{} last pmt: {}".format(compSmallName, DD_MM_YYYY(recentPmtDate))
+  data["showVerbatimOnTop"] = "{} last pmt: {}".format(compSmallName, DD_MM_YYYY(recentPmtDate))
 
   with open(PMT_JSON_FILE_NAME, "w+") as f:
-    json.dump(data, f, separators=(',',':'), indent=2)
+    json.dump(data, f, separators=(',', ':'), indent=2)
   return
+
 
 def _DumpFormCData():
   allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
 
-  lastFormCEnteredOnDate = datetime.date(datetime.date.today().year-100, 1, 1) # Choose a really low date
+  lastFormCEnteredOnDate = datetime.date(datetime.date.today().year-100, 1, 1)  # Choose a really low date
   for eachComp, billList in allBillsDict.iteritems():
     t = [b.formCReceivingDate for b in billList if isinstance(b.formCReceivingDate, datetime.date)]
     if t:
@@ -179,12 +184,11 @@ def _DumpFormCData():
   from copy import deepcopy
   formCReceivableDict = deepcopy(allBillsDict)
   for eachComp, billList in formCReceivableDict.items():
-    newList = [b for b in billList if not b.formCReceivingDate and b.billingCategory.lower() in ["central"]] #inplace removal of bills
+    newList = [b for b in billList if not b.formCReceivingDate and b.billingCategory.lower() in ["central"]]  # Inplace removal of bills
     if newList:
-      formCReceivableDict[eachComp] = [b for b in billList if not b.formCReceivingDate and b.billingCategory.lower() in ["central"]] #inplace removal of bills
+      formCReceivableDict[eachComp] = [b for b in billList if not b.formCReceivingDate and b.billingCategory.lower() in ["central"]]  # Inplace removal of bills
     else:
       del formCReceivableDict[eachComp]
-
 
   superSmallName = GetOption("CONFIG_SECTION", "SuperSmallName")
 
@@ -208,28 +212,30 @@ def _DumpFormCData():
     """
     for eachYear, quarters in yd.iteritems():
       for eachQuarter, billList in quarters.iteritems():
-        quarters[eachQuarter]  = [BillNoDateAmountDict(bill) for bill in billList] #In place replacement of billList with smaller objcets containing only necessary data.
+        quarters[eachQuarter] = [BillNoDateAmountDict(bill) for bill in billList]  # In place replacement of billList with smaller objcets containing only necessary data.
     singleCompFormC = {
-        "key":key,
-        "yd":yd,
-        }
+        "key": key,
+        "yd": yd,
+                      }
 
     allCompsFormC.append(singleCompFormC)
 
   data["allCompsFormC"] = allCompsFormC
   compSmallName = GetOption("CONFIG_SECTION", "SmallName")
-  data ["showVerbatimOnTop"] = "{} : {}".format(compSmallName, DD_MM_YYYY(lastFormCEnteredOnDate))
+  data["showVerbatimOnTop"] = "{} : {}".format(compSmallName, DD_MM_YYYY(lastFormCEnteredOnDate))
 
   with open(FORMC_JSON_FILE_NAME, "w+") as f:
-    json.dump(data, f, separators=(',',':'), indent=2)
+    json.dump(data, f, separators=(',', ':'), indent=2)
   return
   return
+
 
 def _DumpJSONDB():
   _DumpFormCData()
   _DumpPaymentsDB()
   _DumpOrdersDB()
   return
+
 
 def AskUberObserverToUploadJsons():
   #TODO:There is an extremely tight coupling within pmtapp and jsongenerator. For ex jsongenerator has to know the path of pushfile to execute it. Need a more elegant way to invoke uploads.
@@ -239,7 +245,7 @@ def AskUberObserverToUploadJsons():
   if not os.path.exists(PUSH_FILE):
     raise Exception("{} does not exist".format(PUSH_FILE))
   e = 'moc.liamg@ztigihba'
-  v='live'
+  v = 'live'
   cmd = "python \"{pushFile}\" --email={e} --version={v} --oauth2".format(pushFile=PUSH_FILE, e=e[::-1], v=v)
   print("Running: {}".format(cmd))
   subprocess.check_call(cmd)
@@ -251,8 +257,8 @@ def ParseOptions():
   parser = argparse.ArgumentParser()
 
   parser.add_argument("-gj", "--generate-json",
-      dest='generateJson', action="store_true",
-      default=False, help="If present, only then json data will be generated.")
+        dest='generateJson', action="store_true",
+        default=False, help="If present, only then json data will be generated.")
 
   return parser.parse_args()
 

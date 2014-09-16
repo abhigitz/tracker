@@ -13,22 +13,24 @@
 import datetime
 import os
 
-LOG_FILE_PATH = "b:\\desktop\\lastrunSEWTrack.txt"
+LOG_FILE_PATH = os.path.join(os.getenv("TEMPPATH"), "lastrunSEWTrack.txt")
+
 
 def DeleteLogIfExists():
   if os.path.exists(LOG_FILE_PATH):
     os.remove(LOG_FILE_PATH)
 
+
 def log(msg):
   with open(LOG_FILE_PATH, "a") as f:
     f.write("\n{}: {}".format(datetime.datetime.now(), msg))
 
+
 def main():
-  #DeleteLogIfExists()
   try:
     t = datetime.datetime.now()
     log("Initiating {}".format(__file__))
-    from whopaid.SanityChecks import SendAutomaticHeartBeat #This should be within the try block so that we can see the exception if it happens.
+    from whopaid.SanityChecks import SendAutomaticHeartBeat  # This should be within the try block so that we can see the exception if it happens.
     SendAutomaticHeartBeat()
     dt = datetime.datetime.now() - t
     log("Ran successfully. Took {} seconds".format(dt.seconds))
