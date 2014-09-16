@@ -28,7 +28,6 @@ def floatx(i):
 def datex(d):
     return(datetime.date.today() if d is None else d)
 
-
 class CompaniesDict(dict):#TODO: Name it as DB
     """Base Class which is basically a dictionary. Key is compName and Value is a list of single bills of that company"""
     def __init__(self):

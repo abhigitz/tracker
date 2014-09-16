@@ -6,7 +6,7 @@
 ###############################################################################
 from Util.Exception import MyException
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import LoadIterableWorkbook
+from Util.ExcelReader import LoadIterableWorkbook, GetCellValue, GetRows
 from Util.Misc import GetPickledObject, ParseDateFromString
 
 
@@ -116,12 +116,13 @@ def GuessKindFromValue(val):
     elif val.lower() == "adjustment": return KIND.ADJUSTMENT
     elif val.lower() == "order": return KIND.ORDER
     elif val.lower() == "punted": return KIND.PUNTED_ORDER
+  print("Returning {}".format(val))
   return None
 
 def GuessKindFromRow(row):
   for cell in row:
     col = cell.column
-    val = cell.internal_value
+    val = GetCellValue(cell)
 
     if col == SheetCols.KindOfEntery:
       return GuessKindFromValue(val)
@@ -137,32 +138,28 @@ class _AllSuppliersDict(SuppliersDict):
   """
   def __init__(self, workbookPath):
     super(_AllSuppliersDict, self).__init__()
-    wb = LoadIterableWorkbook(workbookPath)
-    ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", WRKBK_SHEET_NAME_CONFIG_OPTION))
-    MAX_ROW = ws.get_highest_row()
-    MIN_ROW = int(GetOption("CONFIG_SECTION", WRKBK_SHEET_DATA_STARTS_AT_ROW_CONFIG_OPTION))
-    rowNumber = 0
 
-    frr =  MIN_ROW
+    for row in GetRows(
+      workbookPath=workbookPath,
+      sheetName=GetOption("CONFIG_SECTION", WRKBK_SHEET_NAME_CONFIG_OPTION),
+      firstRow=GetOption("CONFIG_SECTION", WRKBK_SHEET_DATA_STARTS_AT_ROW_CONFIG_OPTION),
+      includeLastRow=False
+      ):
 
-    for row in ws.iter_rows():
-      rowNumber += 1
-      if rowNumber < frr: continue  #We are not reading anything before frr. This might save us from reading couple thousand lines.
-      if rowNumber >= MAX_ROW: break
 
-      kind = GuessKindFromRow(row)
-      if kind == KIND.BILL:
-        self.AddBill(CreateSingleBillRow(row))
-      elif kind == KIND.PAYMENT:
-        self.AddPayment(CreateSinglePaymentRow(row))
-      elif kind == KIND.ADJUSTMENT:
-        self.AddAdjustment(CreateSingleAdjustmentRow(row))
-      elif kind == KIND.ORDER:
-        self.AddOrder(CreateSingleOrderRow(row))
-      elif kind == KIND.PUNTED_ORDER:
-        pass #DO NOT DO ANYTHING FOR PUNTED ORDERS
-      else:
-        raise Exception("Error in row number: {} Kind of entry is invalid".format(rowNumber))
+        kind = GuessKindFromRow(row)
+        if kind == KIND.BILL:
+          self.AddBill(CreateSingleBillRow(row))
+        elif kind == KIND.PAYMENT:
+          self.AddPayment(CreateSinglePaymentRow(row))
+        elif kind == KIND.ADJUSTMENT:
+          self.AddAdjustment(CreateSingleAdjustmentRow(row))
+        elif kind == KIND.ORDER:
+          self.AddOrder(CreateSingleOrderRow(row))
+        elif kind == KIND.PUNTED_ORDER:
+          pass #DO NOT DO ANYTHING FOR PUNTED ORDERS
+        else:
+          raise Exception("Error in row number: {} Kind of entry is invalid".format(rowNumber))
 
 class Supplier(list):
   """
@@ -252,7 +249,7 @@ def CreateSingleOrderRow(row):
     r = SingleOrderRow()
     for cell in row:
         col = cell.column
-        val = cell.internal_value
+        val = GetCellValue(cell)
 
         if col == SheetCols.SupplierFriendlyNameCol:
             if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
@@ -268,7 +265,7 @@ def CreateSingleAdjustmentRow(row):
     r = SingleAdjustmentRow()
     for cell in row:
         col = cell.column
-        val = cell.internal_value
+        val = GetCellValue(cell)
 
         if col == SheetCols.SupplierFriendlyNameCol:
             if not val: raise Exception("No supplier name in row: {} and col: {}".format(cell.row, col))
@@ -293,7 +290,7 @@ def CreateSinglePaymentRow(row):
     r = SinglePaymentRow()
     for cell in row:
         col = cell.column
-        val = cell.internal_value
+        val = GetCellValue(cell)
 
         if col == SheetCols.InvoiceAmount:
             if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
@@ -311,7 +308,7 @@ def CreateSingleBillRow(row):
   b = SingleBillRow()
   for cell in row:
     col = cell.column
-    val = cell.internal_value
+    val = GetCellValue(cell)
 
     b.rowNumber = cell.row
     if col == SheetCols.InvoiceAmount:
