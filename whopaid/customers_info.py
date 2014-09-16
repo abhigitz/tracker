@@ -7,6 +7,7 @@
 #######################################################
 from Util.Misc import GetPickledObject
 from Util.Config import GetOption, GetAppDir
+from Util.ExcelReader import LoadIterableWorkbook, GetCellValue
 
 import os
 
@@ -45,7 +46,7 @@ def CreateSingleCustomerInfo(row):
     c = SingleCompanyInfo()
     for cell in row:
         col = cell.column
-        val = cell.internal_value
+        val = GetCellValue(cell)
 
         if col == CustomerInfoCol.CompanyFriendlyNameCol:
             c.companyFriendlyName = val
@@ -103,7 +104,6 @@ class _AllCustomersInfo(dict):
     """Base Class which is basically a dictionary. Key is compName and Value is a list of info"""
     def __init__(self, custDBwbPath):
         super(_AllCustomersInfo, self).__init__(dict())
-        from Util.ExcelReader import LoadIterableWorkbook
         wb = LoadIterableWorkbook(custDBwbPath)
         dataStartsAtRow = int(GetOption("CONFIG_SECTION", "CustDataStartsAtRow"))
         ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "NameOfCustSheet"))

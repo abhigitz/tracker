@@ -51,3 +51,12 @@ def VLookup(workbookPath, sheetName, lookUpValue, lookUpColumn, correspondingCol
 
 def GetColLetter(x):
   return get_column_letter(x)
+
+import os
+OS_TYPE_IS_NT = os.name.lower()=='nt'
+
+def GetCellValue(c):
+  if OS_TYPE_IS_NT:
+    return c.internal_value
+  else:
+    return c.value

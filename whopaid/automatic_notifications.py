@@ -11,8 +11,8 @@ from Util.Misc import PrintInBox, DD_MMM_YYYY, GetFirstDateOfThisFinancialYear
 from Util.Persistent import Persistent
 from Util.Sms import SendSms
 
-from whopaid.UtilWhoPaid import SelectBillsAfterDate, SelectBillsBeforeDate, GetAllBillsInLastNDays
-from whopaid.CustomersInfo import GetAllCustomersInfo
+from whopaid.util_whopaid import SelectBillsAfterDate, SelectBillsBeforeDate, GetAllBillsInLastNDays
+from whopaid.customers_info import GetAllCustomersInfo
 
 from collections import OrderedDict
 from string import Template

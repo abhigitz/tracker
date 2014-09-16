@@ -13,11 +13,11 @@ from Util.Exception import MyException
 from Util.Misc import PrintInBox, ParseDateFromString, DD_MMM_YYYY
 from Util.Persistent import Persistent
 
-from whopaid.AutomaticNotifications import SendAutomaticSmsReportsIfRequired
-from whopaid.CustomersInfo import GetAllCustomersInfo
-from whopaid.IncomingMaterial import GetAllSuppliersDict
-from whopaid.JsonDataGenerator import AskUberObserverToUploadJsons
-from whopaid.UtilWhoPaid import GetAllCompaniesDict, SelectBillsAfterDate, ShrinkWorkingArea, GetWorkBookPath
+from whopaid.automatic_notifications import SendAutomaticSmsReportsIfRequired
+from whopaid.customers_info import GetAllCustomersInfo
+from whopaid.incoming_material import GetAllSuppliersDict
+from whopaid.json_data_generator import AskUberObserverToUploadJsons
+from whopaid.util_whopaid import GetAllCompaniesDict, SelectBillsAfterDate, ShrinkWorkingArea, GetWorkBookPath
 
 from collections import defaultdict
 import os

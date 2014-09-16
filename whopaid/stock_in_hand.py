@@ -10,9 +10,9 @@ from Util.Misc import PrintInBox
 from Util.Exception import MyException
 
 from whopaid.bom import GetBOM
-from whopaid.IncomingMaterial import GetAllSuppliersDict
-from whopaid.UtilWhoPaid import GetAllCompaniesDict
-from whopaid.SanityChecks import CheckConsistency
+from whopaid.incoming_material import GetAllSuppliersDict
+from whopaid.util_whopaid import GetAllCompaniesDict
+from whopaid.sanity_checks import CheckConsistency
 
 
 def CalculateStockInHand():

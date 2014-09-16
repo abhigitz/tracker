@@ -2,10 +2,10 @@
 from Util.Config import GetOption
 from Util.Misc import DD_MM_YYYY, DD_MMM_YYYY
 
-from whopaid.CustomersInfo import GetAllCustomersInfo
-from whopaid.UtilWhoPaid import SelectUnpaidBillsFrom,\
+from whopaid.customers_info import GetAllCustomersInfo
+from whopaid.util_whopaid import SelectUnpaidBillsFrom,\
     GetAllCompaniesDict, datex, RemoveTrackingBills
-from whopaid.UtilFormC import QuarterlyClubbedFORMC
+from whopaid.util_formc import QuarterlyClubbedFORMC
 
 import datetime
 import json

@@ -7,11 +7,11 @@
 ###############################################################################
 from Util.Exception import MyException
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import LoadIterableWorkbook
+from Util.ExcelReader import LoadIterableWorkbook, GetCellValue
 from Util.Misc import GetPickledObject, ParseDateFromString, DD_MM_YYYY, PrintInBox
 from Util.Persistent import Persistent
 
-from whopaid.CustomersInfo import GetAllCustomersInfo
+from whopaid.customers_info import GetAllCustomersInfo
 
 import os
 import datetime
@@ -120,7 +120,7 @@ def GuessKindFromValue(val):
 def GuessKindFromRow(row):
   for cell in row:
     col = cell.column
-    val = cell.internal_value
+    val = GetCellValue(cell)
 
     if col == SheetCols.KindOfEntery:
       return GuessKindFromValue(val)
@@ -395,7 +395,7 @@ def CreateSingleOrderRow(row):
     r = SingleOrderRow()
     for cell in row:
         col = cell.column
-        val = cell.internal_value
+        val = GetCellValue(cell)
 
         if col == SheetCols.CompanyFriendlyNameCol:
             if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
@@ -417,7 +417,7 @@ def CreateSingleAdjustmentRow(row):
     r = SingleAdjustmentRow()
     for cell in row:
         col = cell.column
-        val = cell.internal_value
+        val = GetCellValue(cell)
 
         if col == SheetCols.CompanyFriendlyNameCol:
             if not val: raise Exception("No company name in row: {} and col: {}".format(cell.row, col))
@@ -446,7 +446,7 @@ def CreateSinglePaymentRow(row):
     r = SinglePaymentRow()
     for cell in row:
         col = cell.column
-        val = cell.internal_value
+        val = GetCellValue(cell)
 
         if col == SheetCols.InvoiceAmount:
             if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
@@ -478,7 +478,7 @@ def CreateSingleBillRow(row):
   b = SingleBillRow()
   for cell in row:
     col = cell.column
-    val = cell.internal_value
+    val = GetCellValue(cell)
 
     b.rowNumber = cell.row
     if col == SheetCols.InvoiceAmount:
