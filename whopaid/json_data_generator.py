@@ -248,8 +248,8 @@ def AskUberObserverToUploadJsons():
   v = 'live'
   cmd = "python \"{pushFile}\" --email={e} --version={v} --oauth2".format(pushFile=PUSH_FILE, e=e[::-1], v=v)
   print("Running: {}".format(cmd))
-  subprocess.check_call(cmd)
-  return
+  subprocess.check_call(cmd, shell=True)
+  return #TODO: Nabbi make sure your name doesn't appear in code. It can be in bash_profile
 
 
 def ParseOptions():
