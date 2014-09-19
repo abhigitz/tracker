@@ -21,6 +21,7 @@ PMT_JSON_FILE_NAME   = os.path.abspath(os.path.join(DUMPING_DIR, "PMT_" + SMALL_
 ORDER_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "ORDER_" + SMALL_NAME + EXT))
 FORMC_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "FORMC_" + SMALL_NAME + EXT))
 RAW_MATERIAL_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "RAWMAT_" + SMALL_NAME + EXT))
+FINISHED_STOCK_IN_HAND_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "FINSTOCK_" + SMALL_NAME + EXT))
 
 ALL_COMPANIES_DICT = GetAllCompaniesDict()
 """
@@ -147,6 +148,44 @@ def _DumpRawMaterialsNow():
       ]
 
   with open(RAW_MATERIAL_JSON_FILE_NAME, "w+") as f:
+    json.dump(data, f, separators=(',', ':'), indent=2)
+  return
+
+def _DumpFinStockInHand():
+  if os.path.exists(FINISHED_STOCK_IN_HAND_JSON_FILE_NAME):
+    os.remove(FINISHED_STOCK_IN_HAND_JSON_FILE_NAME)
+
+  from collections import OrderedDict
+  from whopaid.stock_in_hand import CalculateFinishedGoodsSIH
+  finalFinishedGoodsDict = CalculateFinishedGoodsSIH()
+  finalFinishedGoodsDict = OrderedDict(sorted(finalFinishedGoodsDict.items()))
+
+
+  data = dict()  # This will have one day orders
+  models = list()
+
+  for model, qty in finalFinishedGoodsDict.iteritems():
+    singleModel=dict()
+    singleModel["name"] = model
+    singleModel["nowQty"] = qty
+    models.append(singleModel)  # Just dump this single part there
+
+  data["models"] = models
+
+  from whopaid.daily_production import GetDailyProductionDict
+  allProd = GetDailyProductionDict().GetDailyProdOfAllMaterialsAsDict()
+  recentDailyProdcutionDate = max([b.productionDate for product, dpRows in allProd.iteritems() for b in dpRows])
+
+  allBillsDict = ALL_COMPANIES_DICT.GetAllBillsOfAllCompaniesAsDict()
+  recentOutgoingMaterialBillDate = max([b.invoiceDate for comp, bills in allBillsDict.iteritems() for b in bills])
+
+  compSmallName = GetOption("CONFIG_SECTION", "SmallName")
+  data["showVerbatimOnTop"] = [
+      "{} last material produced on : {}".format(compSmallName, DD_MM_YYYY(recentDailyProdcutionDate)),
+      "{} last outgoing invoice date: {}".format(compSmallName, DD_MM_YYYY(recentOutgoingMaterialBillDate)),
+      ]
+
+  with open(FINISHED_STOCK_IN_HAND_JSON_FILE_NAME, "w+") as f:
     json.dump(data, f, separators=(',', ':'), indent=2)
   return
 
@@ -293,6 +332,7 @@ def _DumpFormCData():
 
 
 def _DumpJSONDB():
+  _DumpFinStockInHand()
   _DumpRawMaterialsNow()
   _DumpFormCData()
   _DumpPaymentsDB()

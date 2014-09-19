@@ -71,8 +71,8 @@ def ShowFinishedGoodsSIHOnScreen():
   PrintInBox("Finished Goods - Stock in hand")
   finalFinishedGoodsDict = CalculateFinishedGoodsSIH()
   finalFinishedGoodsDict = OrderedDict(sorted(finalFinishedGoodsDict.items()))
-  for parts, qty in finalFinishedGoodsDict.iteritems():
-    print("{:<15}{:15}".format(parts, qty))
+  for model, qty in finalFinishedGoodsDict.iteritems():
+    print("{:<15}{:15}".format(model, qty))
 
 def ShowRawMaterialSIHOnScreen():
   PrintInBox("Raw material - Stock in hand")
