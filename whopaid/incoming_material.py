@@ -6,7 +6,7 @@
 ###############################################################################
 from Util.Exception import MyException
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import LoadIterableWorkbook, GetCellValue, GetRows
+from Util.ExcelReader import GetRows
 from Util.Misc import GetPickledObject, ParseDateFromString
 
 
@@ -116,15 +116,14 @@ def GuessKindFromValue(val):
     elif val.lower() == "adjustment": return KIND.ADJUSTMENT
     elif val.lower() == "order": return KIND.ORDER
     elif val.lower() == "punted": return KIND.PUNTED_ORDER
-  print("Returning {}".format(val))
   return None
 
 def GuessKindFromRow(row):
   for cell in row:
     col = cell.column
-    val = GetCellValue(cell)
+    val = cell.value
 
-    if col == SheetCols.KindOfEntery:
+    if col == _SheetCols.KindOfEntery:
       return GuessKindFromValue(val)
   return None
 
@@ -147,19 +146,20 @@ class _AllSuppliersDict(SuppliersDict):
       ):
 
 
-        kind = GuessKindFromRow(row)
-        if kind == KIND.BILL:
-          self.AddBill(CreateSingleBillRow(row))
-        elif kind == KIND.PAYMENT:
-          self.AddPayment(CreateSinglePaymentRow(row))
-        elif kind == KIND.ADJUSTMENT:
-          self.AddAdjustment(CreateSingleAdjustmentRow(row))
-        elif kind == KIND.ORDER:
-          self.AddOrder(CreateSingleOrderRow(row))
-        elif kind == KIND.PUNTED_ORDER:
-          pass #DO NOT DO ANYTHING FOR PUNTED ORDERS
-        else:
-          raise Exception("Error in row number: {} Kind of entry is invalid".format(rowNumber))
+      kind = GuessKindFromRow(row)
+      if kind == KIND.BILL:
+        self.AddBill(_CreateSingleBillRow(row))
+      elif kind == KIND.PAYMENT:
+        self.AddPayment(_CreateSinglePaymentRow(row))
+      elif kind == KIND.ADJUSTMENT:
+        self.AddAdjustment(_CreateSingleAdjustmentRow(row))
+      elif kind == KIND.ORDER:
+        self.AddOrder(_CreateSingleOrderRow(row))
+      elif kind == KIND.PUNTED_ORDER:
+        pass #DO NOT DO ANYTHING FOR PUNTED ORDERS
+      else:
+        firstCell = row[0]
+        raise Exception("Error in row number: {} Kind of entry is invalid".format(firstCell.row))
 
 class Supplier(list):
   """
@@ -192,158 +192,173 @@ class Supplier(list):
 
 class SingleRow(object):
   pass
+
+
 class SinglePaymentRow(SingleRow):
   pass
+
+
 class SingleAdjustmentRow(SingleRow):
   pass
+
 
 class SingleOrderRow(SingleRow):
   pass
 
+
 class SingleBillRow(SingleRow):
-    """
-    This class represents a single row in the excel sheet which in effect represents a single bill
-    """
-    def __init__(self):
-        pass
+  """
+  This class represents a single row in the excel sheet which in effect represents a single bill
+  """
+  def __init__(self):
+    pass
 
-    def __lt__(self, other): # Helps in just using sorted over a list of bills
-        if self.invoiceDate < other.invoiceDate:
-            return True
-        elif self.invoiceDate == other.invoiceDate:
-            return self.billNumber < other.billNumber
-        else:
-            return False
+  def __lt__(self, other): # Helps in just using sorted over a list of bills
+    if self.invoiceDate < other.invoiceDate:
+      return True
+    elif self.invoiceDate == other.invoiceDate:
+      return self.billNumber < other.billNumber
+    else:
+      return False
 
-    def CheckCalculation(self):
-        if intx(self.goodsValue) != 0:
-            if(intx(self.amount) != (intx(self.goodsValue) + intx(self.tax) + intx(self.courier))):
-              raise MyException("Calculation error in bill#{} billDate:".format(str(self.billNumber), self.invoiceDate))
-
-
-def SelectBillsBeforeDate(billList, dateObject):
-    if not dateObject:
-        import pdb; pdb.set_trace()
-    return [b for b in billList if dateObject >= ParseDateFromString(b.invoiceDate)]
-
-def SelectBillsAfterDate(billList, dateObject):
-    return [b for b in billList if dateObject <= ParseDateFromString(b.invoiceDate)]
-
-class SheetCols:
-    """
-    This class is used as Enum.
-    If and when the format of excel file changes just change the column bindings in this class
-    """
-    SupplierFriendlyNameCol = "A"
-    KindOfEntery            = "B"
-    InvoiceNumberCol        = "C"
-    InvoiceDateCol          = "D"
-    MaterialDesc            = "E"
-    MaterialQty             = "F"
-    GoodsValue              = "G"
-    Tax                     = "H"
-    Courier                 = "I"
-    InvoiceAmount           = "J"
-
-def CreateSingleOrderRow(row):
-    r = SingleOrderRow()
-    for cell in row:
-        col = cell.column
-        val = GetCellValue(cell)
-
-        if col == SheetCols.SupplierFriendlyNameCol:
-            if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
-            r.compName = val
-        elif col == SheetCols.KindOfEntery:
-            r.kindOfEntery = val
-        elif col == SheetCols.MaterialDesc:
-            if not val: raise Exception("Order in row: {} seems empty. Please fix the database".format(cell.row))
-            r.materialDesc = val
-    return r
-
-def CreateSingleAdjustmentRow(row):
-    r = SingleAdjustmentRow()
-    for cell in row:
-        col = cell.column
-        val = GetCellValue(cell)
-
-        if col == SheetCols.SupplierFriendlyNameCol:
-            if not val: raise Exception("No supplier name in row: {} and col: {}".format(cell.row, col))
-            r.compName = val
-        elif col == SheetCols.KindOfEntery:
-            if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
-            r.kindOfEntery = val
-        elif col == SheetCols.InvoiceAmount:
-            if not val: raise Exception("No adjustment amount in row: {} and col: {}".format(cell.row, col))
-            r.amount = val
-        elif col == SheetCols.InvoiceDateCol:
-            if val is not None:
-                r.invoiceDate = ParseDateFromString(val)
-            else:
-                r.invoiceDate = val
-        elif col == SheetCols.InvoiceNumberCol:
-            r.adjustmentNo = val
-
-    return r
-
-def CreateSinglePaymentRow(row):
-    r = SinglePaymentRow()
-    for cell in row:
-        col = cell.column
-        val = GetCellValue(cell)
-
-        if col == SheetCols.InvoiceAmount:
-            if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
-            r.amount = val
-        elif col == SheetCols.KindOfEntery:
-            if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
-            r.kindOfEntery = GuessKindFromValue(val)
-        elif col == SheetCols.SupplierFriendlyNameCol:
-            if not val: raise Exception("No supplier name in row: {}".format(cell.row))
-            r.compName = val
-    return r
+  def CheckCalculation(self):
+    if intx(self.goodsValue) != 0:
+      if(intx(self.amount) != (intx(self.goodsValue) + intx(self.tax) + intx(self.courier))):
+        raise MyException("Calculation error in bill#{} billDate:".format(str(self.billNumber), self.invoiceDate))
+    return
 
 
-def CreateSingleBillRow(row):
+class _SheetCols:
+  """
+  This class is used as Enum.
+  If and when the format of excel file changes just change the column bindings in this class
+  """
+  DateOfEntryCol          = "A"
+  SupplierFriendlyNameCol = "B"
+  KindOfEntery            = "C"
+  InvoiceNumberCol        = "D"
+  InvoiceDateCol          = "E"
+  MaterialDesc            = "F"
+  MaterialQty             = "G"
+  GoodsValue              = "H"
+  Tax                     = "I"
+  Courier                 = "J"
+  InvoiceAmount           = "K"
+
+def _CreateSingleOrderRow(row):
+  r = SingleOrderRow()
+  for cell in row:
+    col = cell.column
+    val = cell.value
+
+    if col == _SheetCols.SupplierFriendlyNameCol:
+      if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
+      r.compName = val
+    elif col == _SheetCols.KindOfEntery:
+      r.kindOfEntery = val
+    elif col == _SheetCols.MaterialDesc:
+      if not val: raise Exception("Order in row: {} seems empty. Please fix the database".format(cell.row))
+      r.materialDesc = val
+  return r
+
+def _CreateSingleAdjustmentRow(row):
+  r = SingleAdjustmentRow()
+  for cell in row:
+    col = cell.column
+    val = cell.value
+
+    if col == _SheetCols.SupplierFriendlyNameCol:
+      if not val: raise Exception("No supplier name in row: {} and col: {}".format(cell.row, col))
+      r.compName = val
+    elif col == _SheetCols.KindOfEntery:
+      if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
+      r.kindOfEntery = val
+    elif col == _SheetCols.InvoiceAmount:
+      if not val: raise Exception("No adjustment amount in row: {} and col: {}".format(cell.row, col))
+      r.amount = val
+    elif col == _SheetCols.InvoiceDateCol:
+      if val is not None:
+          r.invoiceDate = ParseDateFromString(val)
+      else:
+          r.invoiceDate = val
+    elif col == _SheetCols.InvoiceNumberCol:
+      r.adjustmentNo = val
+
+  return r
+
+def _CreateSinglePaymentRow(row):
+  r = SinglePaymentRow()
+  for cell in row:
+    col = cell.column
+    val = cell.value
+
+    if col == _SheetCols.InvoiceAmount:
+      if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
+      r.amount = val
+    elif col == _SheetCols.KindOfEntery:
+      if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
+      r.kindOfEntery = GuessKindFromValue(val)
+    elif col == _SheetCols.SupplierFriendlyNameCol:
+      if not val: raise Exception("No supplier name in row: {}".format(cell.row))
+      r.compName = val
+  return r
+
+
+def _CreateSingleBillRow(row):
   b = SingleBillRow()
   for cell in row:
     col = cell.column
-    val = GetCellValue(cell)
+    val = cell.value
 
     b.rowNumber = cell.row
-    if col == SheetCols.InvoiceAmount:
+    if col == _SheetCols.InvoiceAmount:
       b.amount = val
-    elif col == SheetCols.KindOfEntery:
+    elif col == _SheetCols.KindOfEntery:
       if not val: raise Exception("No type of entery in row: {} and col: {}".format(cell.row, col))
       b.kindOfEntery = val
-    elif col == SheetCols.InvoiceNumberCol:
+    elif col == _SheetCols.InvoiceNumberCol:
       if not val: raise Exception("Row: {} seems not to have any bill number.".format(cell.row))
       b.billNumber = val
-    elif col == SheetCols.SupplierFriendlyNameCol:
+    elif col == _SheetCols.SupplierFriendlyNameCol:
       if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
       b.compName = val
-    elif col == SheetCols.Courier:
+    elif col == _SheetCols.Courier:
       b.courier = val
-    elif col == SheetCols.InvoiceDateCol:
+    elif col == _SheetCols.DateOfEntryCol:
+      if not val: raise Exception("No date of receiving in row: {} and col: {}".format(cell.row, col))
+      b.materialReceivingDate = ParseDateFromString(val)
+    elif col == _SheetCols.InvoiceDateCol:
       if not val: raise Exception("No invoice date in row: {} and col: {}".format(cell.row, col))
       b.invoiceDate = ParseDateFromString(val)
-    elif col == SheetCols.GoodsValue:
+    elif col == _SheetCols.GoodsValue:
       #if not val: raise Exception("No goods value in row: {} and col: {}".format(cell.row, col))
       b.goodsValue = val
-    elif col == SheetCols.Tax:
+    elif col == _SheetCols.Tax:
       #if not val: raise Exception("No tax in row: {} and col: {}".format(cell.row, col))
       b.tax = val
-    elif col == SheetCols.MaterialDesc:
+    elif col == _SheetCols.MaterialDesc:
       if isinstance(val, basestring):
         b.materialDesc = val
       elif val is None:
         b.materialDesc = "--"
       else:
         raise Exception("The material description should be string and not {} in row: {} and col: {}".format(type(val), cell.row, col))
-    elif col == SheetCols.MaterialQty:
+    elif col == _SheetCols.MaterialQty:
       if val is not None:
         b.materialQty = int(val)
       else:
         b.materialQty = val
   return b
 
+def main():
+
+  allSupplierDict = GetAllSuppliersDict().GetAllBillsOfAllSuppliersAsDict()
+  for comp, bills in allSupplierDict.iteritems():
+    for b in bills:
+      print(b.materialDesc, b.materialQty)
+
+
+  pass
+
+if __name__ == "__main__":
+  main()

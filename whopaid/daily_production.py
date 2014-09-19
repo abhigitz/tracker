@@ -5,7 +5,7 @@
 ## Requirement: Python Interpretor must be installed
 ###############################################################################
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import GetCellValue, GetRows
+from Util.ExcelReader import GetRows
 from Util.Misc import GetPickledObject, ParseDateFromString, DD_MMM_YYYY
 
 import os
@@ -79,12 +79,12 @@ class _AllDailyProductionDict(DailyProductionDict):
   """
   def __init__(self, workbookPath):
     super(_AllDailyProductionDict, self).__init__()
-    rows = GetRows(
+    for row in GetRows(
         workbookPath = workbookPath,
         sheetName = GetOption("CONFIG_SECTION", WRKBK_SHEET_NAME_CONFIG_OPTION),
         firstRow = GetOption("CONFIG_SECTION", WRKBK_SHEET_DATA_STARTS_AT_ROW_CONFIG_OPTION),
-        includeLastRow=False)
-    for row in rows:
+        includeLastRow=False):
+
       kind = _GuessKindFromRow(row)
       if kind == KIND.DAILY_PRODUCTION:
         self.AddDailyProductionRow(_CreateSingleDailyProductionRow(row))
@@ -115,7 +115,7 @@ def _CreateSingleDailyProductionRow(row):
   r = SingleRow()
   for cell in row:
     col = cell.column
-    val = GetCellValue(cell)
+    val = cell.value
 
     r.rowNumber = cell.row
     if col == _SheetCols.ModelDescCol:

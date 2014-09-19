@@ -225,3 +225,4 @@ governite = pushd %XDATDOCSDIR%\SDAT\Courier && start.
 
 golivetracker = %UBEROBSERVERDIR%\utils\push.py --version="live" --email="abhigitz@gmail.com" --oauth2 --force-upload $*
 godevtracker = %UBEROBSERVERDIR%\utils\push.py --version="dev" --email="abhigitz@gmail.com" --oauth2 --force-upload $*
+trackerlt = %UBEROBSERVERDIR%\utils\push.py --localTesting $*

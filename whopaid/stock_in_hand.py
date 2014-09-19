@@ -5,15 +5,14 @@
 #=============================================================
 from collections import defaultdict, OrderedDict
 
-
-from Util.Misc import PrintInBox
 from Util.Exception import MyException
+from Util.Misc import PrintInBox
 
 from whopaid.bom import GetBOM
-from whopaid.util_whopaid import GetAllCompaniesDict
+from whopaid.daily_production import GetDailyProductionDict
 from whopaid.incoming_material import GetAllSuppliersDict
 from whopaid.sanity_checks import CheckConsistency
-from whopaid.daily_production import GetDailyProductionDict
+from whopaid.util_whopaid import GetAllCompaniesDict
 
 
 def CalculateRawMaterialSIH():
@@ -79,8 +78,8 @@ def ShowRawMaterialSIHOnScreen():
   PrintInBox("Raw material - Stock in hand")
   finalPartsUsedDict = CalculateRawMaterialSIH()
   finalPartsUsedDict = OrderedDict(sorted(finalPartsUsedDict.items()))
-  for parts, qty in finalPartsUsedDict.iteritems():
-    print("{:<15}{:15}".format(parts, qty))
+  for part, qty in finalPartsUsedDict.iteritems():
+    print("{:<15}{:15}".format(part, qty))
   return
 
 

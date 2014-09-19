@@ -20,7 +20,9 @@ EXT = ".json"
 PMT_JSON_FILE_NAME   = os.path.abspath(os.path.join(DUMPING_DIR, "PMT_" + SMALL_NAME + EXT))
 ORDER_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "ORDER_" + SMALL_NAME + EXT))
 FORMC_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "FORMC_" + SMALL_NAME + EXT))
+RAW_MATERIAL_JSON_FILE_NAME = os.path.abspath(os.path.join(DUMPING_DIR, "RAWMAT_" + SMALL_NAME + EXT))
 
+ALL_COMPANIES_DICT = GetAllCompaniesDict()
 """
 OrderDB:
 data =
@@ -63,7 +65,7 @@ data =
 
 
 def _DumpOrdersDB():
-  allOrdersDict = GetAllCompaniesDict().GetAllOrdersOfAllCompaniesAsDict()
+  allOrdersDict = ALL_COMPANIES_DICT.GetAllOrdersOfAllCompaniesAsDict()
 
   if os.path.exists(ORDER_JSON_FILE_NAME):
     os.remove(ORDER_JSON_FILE_NAME)
@@ -85,6 +87,68 @@ def _DumpOrdersDB():
     json.dump(data, f, separators=(',', ':'), indent=2)
   return
 
+"""
+RAWMAT_DB
+data =
+{
+ parts:[
+ {
+ name: xyz,
+ nowQty: 10
+ reference: 20
+ diff: -10
+ },
+ name: pqr,
+ nowQty: 15
+ reference: 10
+ diff: 5
+ {
+ },
+ ]
+showVerbatimOnTop:
+}
+"""
+def _DumpRawMaterialsNow():
+  if os.path.exists(RAW_MATERIAL_JSON_FILE_NAME):
+    os.remove(RAW_MATERIAL_JSON_FILE_NAME)
+
+  from collections import OrderedDict
+  from whopaid.stock_in_hand import CalculateRawMaterialSIH
+  from whopaid.bom import GetReferenceLevelQtyForPart
+  finalPartsUsedDict = CalculateRawMaterialSIH()
+  finalPartsUsedDict = OrderedDict(sorted(finalPartsUsedDict.items()))
+
+
+  data = dict()  # This will have one day orders
+  parts = list()
+
+  for part, qty in finalPartsUsedDict.iteritems():
+    refLevel = GetReferenceLevelQtyForPart(part)
+    singlePart=dict()
+    singlePart["name"] = part
+    singlePart["nowQty"] = qty
+    singlePart["refLevel"] = refLevel
+    singlePart["diff"] = int(qty) - int(refLevel)
+    parts.append(singlePart)  # Just dump this single part there
+
+  data["parts"] = parts
+
+  from whopaid.incoming_material import GetAllSuppliersDict
+  allSupplierDict = GetAllSuppliersDict().GetAllBillsOfAllSuppliersAsDict()
+  recentIncomingMaterialInvoiceDate = max([b.materialReceivingDate for comp, bills in allSupplierDict.iteritems() for b in bills])
+
+  allBillsDict = ALL_COMPANIES_DICT.GetAllBillsOfAllCompaniesAsDict()
+  recentOutgoingMaterialBillDate = max([b.invoiceDate for comp, bills in allBillsDict.iteritems() for b in bills])
+
+  compSmallName = GetOption("CONFIG_SECTION", "SmallName")
+  data["showVerbatimOnTop"] = [
+      "{} last incoming invoice date: {}".format(compSmallName, DD_MM_YYYY(recentIncomingMaterialInvoiceDate)),
+      "{} last outgoing invoice date: {}".format(compSmallName, DD_MM_YYYY(recentOutgoingMaterialBillDate)),
+      ]
+
+  with open(RAW_MATERIAL_JSON_FILE_NAME, "w+") as f:
+    json.dump(data, f, separators=(',', ':'), indent=2)
+  return
 
 """
 paymentDB
@@ -115,8 +179,8 @@ data=
 
 
 def _DumpPaymentsDB():
-  allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
-  allAdjustmentsDict = GetAllCompaniesDict().GetAllAdjustmentsOfAllCompaniesAsDict()
+  allBillsDict = ALL_COMPANIES_DICT.GetAllBillsOfAllCompaniesAsDict()
+  allAdjustmentsDict = ALL_COMPANIES_DICT.GetAllAdjustmentsOfAllCompaniesAsDict()
   allCustInfo = GetAllCustomersInfo()
 
   if os.path.exists(PMT_JSON_FILE_NAME):
@@ -161,9 +225,7 @@ def _DumpPaymentsDB():
       allCustomers.append(oneCustomer)
 
   data["customers"] = allCustomers
-  allPayments = GetAllCompaniesDict().GetAllPaymentsByAllCompaniesAsDict()
-  #recentPmtDate = max([p.pmtDate for comp, payments in allPayments.iteritems() for p in payments])
-  recentPmtDate = datetime.date.today()
+  recentPmtDate = datetime.date.today() #TODO: Seems buggy fix it later and calculate real date.
   compSmallName = GetOption("CONFIG_SECTION", "SmallName")
   data["showVerbatimOnTop"] = "{} last pmt: {}".format(compSmallName, DD_MM_YYYY(recentPmtDate))
 
@@ -173,11 +235,11 @@ def _DumpPaymentsDB():
 
 
 def _DumpFormCData():
-  allBillsDict = GetAllCompaniesDict().GetAllBillsOfAllCompaniesAsDict()
+  allBillsDict = ALL_COMPANIES_DICT.GetAllBillsOfAllCompaniesAsDict()
 
   lastFormCEnteredOnDate = datetime.date(datetime.date.today().year-100, 1, 1)  # Choose a really low date
   for eachComp, billList in allBillsDict.iteritems():
-    t = [b.formCReceivingDate for b in billList if isinstance(b.formCReceivingDate, datetime.date)]
+    t = [b.formCReceivingDate for b in billList if b.formCReceivingDate and isinstance(b.formCReceivingDate, datetime.date)]
     if t:
       lastFormCEnteredOnDate = max(lastFormCEnteredOnDate, max(t))
 
@@ -231,6 +293,7 @@ def _DumpFormCData():
 
 
 def _DumpJSONDB():
+  _DumpRawMaterialsNow()
   _DumpFormCData()
   _DumpPaymentsDB()
   _DumpOrdersDB()
@@ -249,7 +312,7 @@ def AskUberObserverToUploadJsons():
   cmd = "python \"{pushFile}\" --email={e} --version={v} --oauth2".format(pushFile=PUSH_FILE, e=e[::-1], v=v)
   print("Running: {}".format(cmd))
   subprocess.check_call(cmd, shell=True)
-  return #TODO: Nabbi make sure your name doesn't appear in code. It can be in bash_profile
+  return
 
 
 def ParseOptions():

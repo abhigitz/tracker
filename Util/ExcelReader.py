@@ -13,7 +13,7 @@ from Util.Decorators import memoize
 def LoadNonIterableWorkbook(workbookPath):
     """Helper function to load a workbook in an iterable fashion"""
     tempCopy = MakeTempCopy(workbookPath)
-    loadedWB = load_workbook(tempCopy, use_iterators= False)
+    loadedWB = load_workbook(tempCopy, use_iterators= False, data_only=True)
     return loadedWB
 
 
@@ -21,7 +21,7 @@ def LoadNonIterableWorkbook(workbookPath):
 def LoadIterableWorkbook(workbookPath):
     """Helper function to load a workbook in an iterable fashion"""
     tempCopy = MakeTempCopy(workbookPath)
-    loadedWB = load_workbook(tempCopy, use_iterators= True)
+    loadedWB = load_workbook(tempCopy, use_iterators= True, data_only=True)
     return loadedWB
 
 
@@ -54,12 +54,6 @@ def GetColLetter(x):
 
 import os
 OS_TYPE_IS_NT = os.name.lower()=='nt'
-
-def GetCellValue(c):
-  if OS_TYPE_IS_NT:
-    return c.internal_value
-  else:
-    return c.value
 
 def GetRows(workbookPath, sheetName, firstRow, includeLastRow):
   wb = LoadIterableWorkbook(workbookPath)

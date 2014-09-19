@@ -4,9 +4,11 @@
 ## Requirement: Python Interpretor must be installed
 ## Openpyxl must be installed
 #######################################################
-from Util.Misc import GetPickledObject
 from Util.Config import GetOption, GetAppDir
+from Util.Decorators import memoize
 from Util.ExcelReader import LoadNonIterableWorkbook, GetColLetter
+from Util.Exception import MyException
+from Util.Misc import GetPickledObject
 
 import os
 
@@ -27,6 +29,20 @@ def GetProductsNamesAsList():
   return [t.value for t in r[0]]
 
 
+def GetReferenceLevelAsList():
+  bomPath = GetBOMPath()
+  wb = LoadNonIterableWorkbook(bomPath)
+  productsNamesInRow = GetOption("CONFIG_SECTION", "BOMProductNameInRow")
+  refLevelCol = GetOption("CONFIG_SECTION", "BOMReferenceLevelInCol")
+  partsStartFromCol = int(productsNamesInRow) + 1
+
+  ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "NameOfBOMSheet"))
+  maxRowNumber = ws.get_highest_row()
+  r= ws.range("{rlc}{psc}:{rlc}{mr}".format(rlc=refLevelCol, psc=partsStartFromCol, mr=maxRowNumber))
+  return [t[0].value for t in r]
+
+
+@memoize
 def GetPartsNamesAsList():
   bomPath = GetBOMPath()
   wb = LoadNonIterableWorkbook(bomPath)
@@ -35,32 +51,41 @@ def GetPartsNamesAsList():
   partsStartFromCol = int(productsNamesInRow) + 1
 
   ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "NameOfBOMSheet"))
-  MAX_ROW = ws.get_highest_row()
-  r= ws.range("{pnc}{psc}:{pnc}{mr}".format(pnc=partsNameInCol, psc=partsStartFromCol, mr=MAX_ROW))
+  maxRowNumber = ws.get_highest_row()
+  r= ws.range("{pnc}{psc}:{pnc}{mr}".format(pnc=partsNameInCol, psc=partsStartFromCol, mr=maxRowNumber))
   return [t[0].value for t in r]
+
+@memoize
+def GetReferenceLevelQtyForPart(part):
+  partNamesList = GetPartsNamesAsList()
+  if part not in partNamesList:
+    raise MyException("Part {} is not defined in BOM".format(part))
+  return GetReferenceLevelAsList()[partNamesList.index(part)]
 
 class _AllBOMInfo(dict):
   """Base Class which is basically a dictionary. Key is compName and Value is a list of info"""
   def __init__(self, bomPath):
     super(_AllBOMInfo, self).__init__(dict())
 
-    from Util.ExcelReader import LoadNonIterableWorkbook, GetColLetter
     wb = LoadNonIterableWorkbook(bomPath)
     ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "NameOfBOMSheet"))
-    MAX_COL = ws.get_highest_column()
-    MAX_ROW = ws.get_highest_row()
-    maxColLetter = GetColLetter(MAX_COL)
-    productsNamesInRow = GetOption("CONFIG_SECTION", "BOMProductNameInRow")
-    dataStartsAtRow = int(productsNamesInRow) + 1
+
+    maxRowNumber = ws.get_highest_row()
+    maxColLetter = GetColLetter(ws.get_highest_column())
+
+    dataStartsAtRow = int(GetOption("CONFIG_SECTION", "BOMProductNameInRow")) + 1
     productsStartFromCol = GetOption("CONFIG_SECTION", "BOMProductsStartsAtCol")
-    ran = "{productsStartFromCol}{dataStartsAtRow}:{maxColLetter}{max_row}".format(productsStartFromCol=productsStartFromCol, dataStartsAtRow=dataStartsAtRow, maxColLetter=maxColLetter, max_row=MAX_ROW)
-    data = ws.range(ran)
+
+    working_range = "{productsStartFromCol}{dataStartsAtRow}:{maxColLetter}{maxRowNumber}".format(productsStartFromCol=productsStartFromCol, dataStartsAtRow=dataStartsAtRow, maxColLetter=maxColLetter, maxRowNumber=maxRowNumber)
+
+    working_data = ws.range(working_range)
     productNamesList = GetProductsNamesAsList()
     partNamesList = GetPartsNamesAsList()
-    for product in productNamesList:
-      self[product] = dict()
+    for productName in productNamesList:
+      #Initialising all the products as empty dictionary
+      self[productName] = dict()
 
-    for i, partRow in enumerate(data):
+    for i, partRow in enumerate(working_data):
       for j, partUsed in enumerate(partRow):
         self[productNamesList[j]][partNamesList[i]] = partUsed.value
     return
@@ -84,6 +109,7 @@ def main():
     PrintInBox("{} uses these parts".format(product))
     for i, (part, qty) in enumerate(parts.items(), start=1):
       print("{:<15}{:<15}:{}".format(i, part, qty))
+  print(GetReferenceLevelAsList())
 
   return
 

@@ -7,7 +7,7 @@
 #######################################################
 from Util.Misc import GetPickledObject
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import LoadIterableWorkbook, GetCellValue
+from Util.ExcelReader import LoadIterableWorkbook
 
 import os
 
@@ -46,7 +46,7 @@ def CreateSingleCustomerInfo(row):
     c = SingleCompanyInfo()
     for cell in row:
         col = cell.column
-        val = GetCellValue(cell)
+        val = cell.value
 
         if col == CustomerInfoCol.CompanyFriendlyNameCol:
             c.companyFriendlyName = val
