@@ -7,7 +7,7 @@
 #######################################################
 from Util.Misc import GetPickledObject
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import LoadIterableWorkbook
+from Util.ExcelReader import GetRows, GetCellValue
 
 import os
 
@@ -43,56 +43,56 @@ class CustomerInfoCol:
 
 
 def CreateSingleCustomerInfo(row):
-    c = SingleCompanyInfo()
-    for cell in row:
-        col = cell.column
-        val = cell.value
+  c = SingleCompanyInfo()
+  for cell in row:
+    col = cell.column
+    val = GetCellValue(cell)
 
-        if col == CustomerInfoCol.CompanyFriendlyNameCol:
-            c.companyFriendlyName = val
-        elif col == CustomerInfoCol.BillingAddressCol:
-            c.billingAddress = val
-        elif col == CustomerInfoCol.TinNumberCol:
-            c.tinNumber = val
-        elif col == CustomerInfoCol.PhoneNumberCol:
-            c.phoneNumber = val
-        elif col == CustomerInfoCol.DeliveryPinCodeCol:
-            c.deliveryPinCode = val
-        elif col == CustomerInfoCol.SmsDispatchNumberCol:
-            c.smsDispatchNo = val
-        elif col == CustomerInfoCol.DeliveryPhoneNumberCol:
-            c.deliveryPhNo = val
-        elif col == CustomerInfoCol.CompanyOfficialNameCol:
-            c.companyOfficialName = val
-        elif col == CustomerInfoCol.CourierAddressCol:
-            c.courierAddress = val
-        elif col == CustomerInfoCol.PreferredCourierCol:
-            c.preferredCourier = val
-        elif col == CustomerInfoCol.CityCol:
-            c.city = val
-        elif col == CustomerInfoCol.EmailForPayment:
-            c.emailForPayment = val.replace("\n","") if val else val
-        elif col == CustomerInfoCol.EmailForFormC:
-            c.emailForFormC = val.replace("\n", "") if val else val
-        elif col == CustomerInfoCol.KindAttentionCol:
-            c.kindAttentionPerson = val
-        elif col == CustomerInfoCol.TrustCol:
-            c.trust = val
-        elif col == CustomerInfoCol.IncludeDaysCol:
-            c.includeDays = val
-        elif col == CustomerInfoCol.CreditLimitCol:
-            c.creditLimit = val
-        elif col == CustomerInfoCol.SendAutomaticMails:
-            c.includeInAutomaticMails = val
-        elif col == CustomerInfoCol.CompanyCodeCol:
-            c.companyCode = val
-        elif col == CustomerInfoCol.MinDaysGapCol:
-            c.minDaysGapBetweenAutomaticMails = val
-        elif col == CustomerInfoCol.IncludeBillAmountInEmails:
-            c.includeBillAmountinEmails = val
-        elif col == CustomerInfoCol.CompanyGroupCol:
-            c.companyGroupName = val
-    return c
+    if col == CustomerInfoCol.CompanyFriendlyNameCol:
+      c.companyFriendlyName = val
+    elif col == CustomerInfoCol.BillingAddressCol:
+      c.billingAddress = val
+    elif col == CustomerInfoCol.TinNumberCol:
+      c.tinNumber = val
+    elif col == CustomerInfoCol.PhoneNumberCol:
+      c.phoneNumber = val
+    elif col == CustomerInfoCol.DeliveryPinCodeCol:
+      c.deliveryPinCode = val
+    elif col == CustomerInfoCol.SmsDispatchNumberCol:
+      c.smsDispatchNo = val
+    elif col == CustomerInfoCol.DeliveryPhoneNumberCol:
+      c.deliveryPhNo = val
+    elif col == CustomerInfoCol.CompanyOfficialNameCol:
+      c.companyOfficialName = val
+    elif col == CustomerInfoCol.CourierAddressCol:
+      c.courierAddress = val
+    elif col == CustomerInfoCol.PreferredCourierCol:
+      c.preferredCourier = val
+    elif col == CustomerInfoCol.CityCol:
+      c.city = val
+    elif col == CustomerInfoCol.EmailForPayment:
+      c.emailForPayment = val.replace("\n","") if val else val
+    elif col == CustomerInfoCol.EmailForFormC:
+      c.emailForFormC = val.replace("\n", "") if val else val
+    elif col == CustomerInfoCol.KindAttentionCol:
+      c.kindAttentionPerson = val
+    elif col == CustomerInfoCol.TrustCol:
+      c.trust = val
+    elif col == CustomerInfoCol.IncludeDaysCol:
+      c.includeDays = val
+    elif col == CustomerInfoCol.CreditLimitCol:
+      c.creditLimit = val
+    elif col == CustomerInfoCol.SendAutomaticMails:
+      c.includeInAutomaticMails = val
+    elif col == CustomerInfoCol.CompanyCodeCol:
+      c.companyCode = val
+    elif col == CustomerInfoCol.MinDaysGapCol:
+      c.minDaysGapBetweenAutomaticMails = val
+    elif col == CustomerInfoCol.IncludeBillAmountInEmails:
+      c.includeBillAmountinEmails = val
+    elif col == CustomerInfoCol.CompanyGroupCol:
+      c.companyGroupName = val
+  return c
 
 
 class SingleCompanyInfo():
@@ -104,26 +104,16 @@ class _AllCustomersInfo(dict):
     """Base Class which is basically a dictionary. Key is compName and Value is a list of info"""
     def __init__(self, custDBwbPath):
         super(_AllCustomersInfo, self).__init__(dict())
-        wb = LoadIterableWorkbook(custDBwbPath)
-        dataStartsAtRow = int(GetOption("CONFIG_SECTION", "CustDataStartsAtRow"))
-        ws = wb.get_sheet_by_name(GetOption("CONFIG_SECTION", "NameOfCustSheet"))
-        MAX_ROW = ws.get_highest_row()
-        rowNumber = 0
-        for row in ws.iter_rows():
-            rowNumber += 1
-            if rowNumber < dataStartsAtRow:
-                continue
-            if rowNumber >= MAX_ROW:
-                break
-            c = CreateSingleCustomerInfo(row)
-            self[c.companyFriendlyName] = c
+        rows = GetRows(workbookPath=custDBwbPath,
+            sheetName = GetOption("CONFIG_SECTION", "NameOfCustSheet"),
+            firstRow= GetOption("CONFIG_SECTION", "CustDataStartsAtRow"),
+            includeLastRow=False)
+        for row in rows:
+          c = CreateSingleCustomerInfo(row)
+          self[c.companyFriendlyName] = c
 
     def GetListOfCompNamesForThisGrp(self, grpName):
-        res = []
-        for compName in self:
-            if self[compName].companyGroupName == grpName:
-                res.append(compName)
-        return res
+      return [compName for compName in self if self[compName].companyGroupName == grpName]
 
     def GetTrustForCustomer(self, compName):
         return self[compName].trust

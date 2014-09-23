@@ -5,10 +5,11 @@
 ## with it
 ## Requirement: Python Interpretor must be installed
 ###############################################################################
-from Util.Decorators import memoize
-from Util.Exception import MyException
+
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import GetRows
+from Util.Decorators import memoize
+from Util.ExcelReader import GetRows, GetCellValue
+from Util.Exception import MyException
 from Util.Misc import GetPickledObject, ParseDateFromString, DD_MM_YYYY
 from Util.Persistent import Persistent
 
@@ -104,26 +105,26 @@ def GetAllCompaniesDict():
     return GetPickledObject(workbookPath, _CreateAllCompaniesDict)
 
 class KIND(object):
-    BILL = 1
-    PAYMENT = 2
-    ADJUSTMENT = 3
-    ORDER = 4
+    BILL         = 1
+    PAYMENT      = 2
+    ADJUSTMENT   = 3
+    ORDER        = 4
     PUNTED_ORDER = 5
 
 def _GuessKindFromValue(val):
   if val:
     val = val.lower()
-    if val.lower() == "bill": return KIND.BILL
-    elif val.lower() == "payment": return KIND.PAYMENT
-    elif val.lower() == "adjustment": return KIND.ADJUSTMENT
-    elif val.lower() == "order": return KIND.ORDER
-    elif val.lower() == "punted": return KIND.PUNTED_ORDER
+    if val == "bill": return KIND.BILL
+    elif val == "payment": return KIND.PAYMENT
+    elif val == "adjustment": return KIND.ADJUSTMENT
+    elif val == "order": return KIND.ORDER
+    elif val == "punted": return KIND.PUNTED_ORDER
   return None
 
 def GuessKindFromRow(row):
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == SheetCols.KindOfEntery:
       return _GuessKindFromValue(val)
@@ -395,7 +396,7 @@ def CreateSingleOrderRow(row):
   r = SingleOrderRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == SheetCols.CompanyFriendlyNameCol:
       if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
@@ -417,7 +418,7 @@ def CreateSingleAdjustmentRow(row):
   r = SingleAdjustmentRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == SheetCols.CompanyFriendlyNameCol:
       if not val: raise Exception("No company name in row: {} and col: {}".format(cell.row, col))
@@ -446,7 +447,7 @@ def CreateSinglePaymentRow(row):
   r = SinglePaymentRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == SheetCols.InvoiceAmount:
       if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
@@ -478,7 +479,7 @@ def _CreateSingleBillRow(row):
   b = SingleBillRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     b.rowNumber = cell.row
     if col == SheetCols.InvoiceAmount:

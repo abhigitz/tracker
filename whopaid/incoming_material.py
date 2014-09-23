@@ -6,7 +6,7 @@
 ###############################################################################
 from Util.Exception import MyException
 from Util.Config import GetOption, GetAppDir
-from Util.ExcelReader import GetRows
+from Util.ExcelReader import GetRows, GetCellValue
 from Util.Misc import GetPickledObject, ParseDateFromString
 
 
@@ -121,7 +121,7 @@ def GuessKindFromValue(val):
 def GuessKindFromRow(row):
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == _SheetCols.KindOfEntery:
       return GuessKindFromValue(val)
@@ -138,14 +138,13 @@ class _AllSuppliersDict(SuppliersDict):
   def __init__(self, workbookPath):
     super(_AllSuppliersDict, self).__init__()
 
-    for row in GetRows(
+    rows = GetRows(
       workbookPath=workbookPath,
       sheetName=GetOption("CONFIG_SECTION", WRKBK_SHEET_NAME_CONFIG_OPTION),
       firstRow=GetOption("CONFIG_SECTION", WRKBK_SHEET_DATA_STARTS_AT_ROW_CONFIG_OPTION),
-      includeLastRow=False
-      ):
+      includeLastRow=False)
 
-
+    for row in rows:
       kind = GuessKindFromRow(row)
       if kind == KIND.BILL:
         self.AddBill(_CreateSingleBillRow(row))
@@ -249,7 +248,7 @@ def _CreateSingleOrderRow(row):
   r = SingleOrderRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == _SheetCols.SupplierFriendlyNameCol:
       if not val: raise Exception("Row: {} seems empty. Please fix the database".format(cell.row))
@@ -265,7 +264,7 @@ def _CreateSingleAdjustmentRow(row):
   r = SingleAdjustmentRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == _SheetCols.SupplierFriendlyNameCol:
       if not val: raise Exception("No supplier name in row: {} and col: {}".format(cell.row, col))
@@ -290,7 +289,7 @@ def _CreateSinglePaymentRow(row):
   r = SinglePaymentRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     if col == _SheetCols.InvoiceAmount:
       if not val: raise Exception("No cheque amount in row: {} and col: {}".format(cell.row, col))
@@ -308,7 +307,7 @@ def _CreateSingleBillRow(row):
   b = SingleBillRow()
   for cell in row:
     col = cell.column
-    val = cell.value
+    val = GetCellValue(cell)
 
     b.rowNumber = cell.row
     if col == _SheetCols.InvoiceAmount:
@@ -351,13 +350,10 @@ def _CreateSingleBillRow(row):
   return b
 
 def main():
-
   allSupplierDict = GetAllSuppliersDict().GetAllBillsOfAllSuppliersAsDict()
   for comp, bills in allSupplierDict.iteritems():
     for b in bills:
       print(b.materialDesc, b.materialQty)
-
-
   pass
 
 if __name__ == "__main__":
